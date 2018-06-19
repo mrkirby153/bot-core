@@ -41,6 +41,8 @@ class ShardManager(private val token: String, val numShards: Int) {
 
     private var startupThread: Thread? = null
 
+    private val eventListeners = mutableListOf<Any>()
+
     /**
      * Adds a shard to the pool.
      *
@@ -70,6 +72,7 @@ class ShardManager(private val token: String, val numShards: Int) {
      */
     fun addListener(eventListener: Any) {
         LOGGER.debug("Registering ${eventListener.javaClass} across ${shards.size} shards")
+        eventListeners.add(eventListener)
         shards.forEach { it.addEventListener(eventListener) }
     }
 
@@ -80,6 +83,7 @@ class ShardManager(private val token: String, val numShards: Int) {
      */
     fun removeListener(eventListener: Any) {
         LOGGER.debug("Removing ${eventListener.javaClass} across ${shards.size} shards")
+        eventListeners.add(eventListener)
         shards.forEach { it.removeEventListener(eventListener) }
     }
 
@@ -171,10 +175,54 @@ class ShardManager(private val token: String, val numShards: Int) {
                     LOGGER.debug("Shard $id is ready")
                     startingShards.remove(id)
                     event.jda.removeEventListener(this)
+                    LOGGER.debug("Registering ${eventListeners.size} event listeners to shard $id")
+                    event.jda.addEventListener(*eventListeners.toTypedArray())
                 }
             })
             buildAsync()
         }
+    }
+
+    /**
+     * Shuts down the shard
+     *
+     * @param id The shard to restart
+     */
+    @JvmOverloads
+    fun shutdown(id: Int = 1) {
+        if (id > numShards)
+            throw IllegalArgumentException(
+                    "Cannot shutdown a shard id greater than the max number of shards")
+        LOGGER.debug("Shard $id is shutting down")
+        val shard = getShard(id)
+        shard.shutdown()
+        shards.remove(shard)
+        LOGGER.debug("Shard $id shut down")
+    }
+
+    /**
+     * Shuts down all shards
+     */
+    fun shutdownAll() {
+        LOGGER.debug("Shutting down all shards")
+        shards.forEach {
+            it.shutdown()
+        }
+        shards.clear()
+    }
+
+    /**
+     * Restarts a shard
+     */
+    @JvmOverloads
+    fun restart(id: Int = 1) {
+        if (id > numShards)
+            throw IllegalArgumentException(
+                    "Cannot restart a shard id greater than the max number of shards")
+        LOGGER.debug("Shard $id is restarting")
+        shutdown(id)
+        addShard(id)
+        LOGGER.debug("Shard $id has restarted")
     }
 
     /**
