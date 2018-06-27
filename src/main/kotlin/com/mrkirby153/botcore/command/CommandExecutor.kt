@@ -1,8 +1,14 @@
 package com.mrkirby153.botcore.command
 
 import com.mrkirby153.botcore.command.args.ArgumentParseException
+import com.mrkirby153.botcore.command.args.ArgumentParser
+import com.mrkirby153.botcore.command.args.CommandContext
 import com.mrkirby153.botcore.shard.ShardManager
 import net.dv8tion.jda.core.JDA
+import net.dv8tion.jda.core.entities.ChannelType
+import net.dv8tion.jda.core.entities.Member
+import net.dv8tion.jda.core.entities.Message
+import java.lang.reflect.InvocationTargetException
 import java.util.LinkedList
 import java.util.regex.Pattern
 import kotlin.math.roundToInt
@@ -10,9 +16,18 @@ import kotlin.math.roundToInt
 /**
  * An executor for executing commands
  */
-open class CommandExecutor(val jda: JDA? = null, val shardManager: ShardManager? = null) {
+
+open class CommandExecutor(private val prefix: String = "",
+                           private val mentionMode: MentionMode = MentionMode.OPTIONAL,
+                           private val jda: JDA? = null,
+                           private val shardManager: ShardManager? = null) {
 
     val parentNode = SkeletonCommandNode("$\$ROOT$$")
+
+    lateinit var clearanceResolver: (Member) -> Int
+
+    var alertUnknownCommand = true
+    var alertNoClearance = true
 
     private val resolvers = mutableMapOf<String, (LinkedList<String>) -> Any?>()
 
@@ -78,6 +93,91 @@ open class CommandExecutor(val jda: JDA? = null, val shardManager: ShardManager?
                     p = node
                 }
             }
+        }
+    }
+
+    fun execute(message: Message) {
+        if (message.channelType == ChannelType.PRIVATE)
+            return
+        var raw = message.contentRaw
+        if (raw.isEmpty())
+            return
+
+        val botId = message.guild.selfMember.user.id
+        val isMention = raw.matches(Regex("^<@!?$botId>.*"))
+
+        when (mentionMode) {
+            MentionMode.REQUIRED -> {
+                if (!isMention)
+                    return
+            }
+            MentionMode.OPTIONAL -> {
+                if (!isMention) {
+                    if (!raw.startsWith(prefix))
+                        return
+                }
+            }
+            MentionMode.DISABLED -> {
+                if (!raw.startsWith(prefix))
+                    return
+            }
+        }
+
+        raw = if (isMention) raw.replace(Regex("^<@!?$botId>\\s?"), "") else raw.substring(
+                prefix.length)
+        val parts = raw.split(" ")
+        if (parts.isEmpty())
+            return
+
+        val cmdArray = LinkedList(raw.split(" "))
+
+        val resolved = resolve(cmdArray)
+
+        if (resolved == null || resolved !is ResolvedCommandNode) {
+            if (alertUnknownCommand)
+                message.channel.sendMessage(":no_entry: That command does not exist").queue()
+            return
+        }
+
+        val userClearance = this.clearanceResolver.invoke(message.member)
+        val metadata = resolved.metadata
+
+        if (userClearance < metadata.clearance) {
+            if (alertNoClearance)
+                message.channel.sendMessage(
+                        ":lock: You do not have permission to perform this command").queue()
+            return
+        }
+
+        val arguments = metadata.arguments
+
+        val parser = ArgumentParser(cmdArray.toTypedArray(), arguments.toTypedArray(), this)
+        val cmdContext: CommandContext = try {
+            parser.parse()
+        } catch (e: ArgumentParseException) {
+            message.channel.sendMessage(
+                    ":no_entry: ${e.message ?: "An unknown error occurred"}").queue()
+            return
+        }
+
+        val method = resolved.method
+        val context = Context(message)
+        context.clearance = userClearance
+        context.commandName = metadata.name
+        context.commandPrefix = if (isMention) "<@$botId>" else prefix
+
+        try {
+            method.invoke(resolved.instance, context, cmdContext)
+        } catch (e: InvocationTargetException) {
+            if (e.targetException is CommandException) {
+                message.channel.sendMessage(":no_entry: ${e.targetException.message}").queue()
+            } else{
+                e.printStackTrace()
+                message.channel.sendMessage(":no_entry: An unknown error occurred").queue()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            message.channel.sendMessage(":no_entry: An unknown error occurred").queue()
         }
     }
 
@@ -223,4 +323,10 @@ open class CommandExecutor(val jda: JDA? = null, val shardManager: ShardManager?
      * Metadata about commands
      */
     data class CommandMetadata(val name: String, val clearance: Int, val arguments: List<String>)
+
+    enum class MentionMode {
+        DISABLED,
+        OPTIONAL,
+        REQUIRED
+    }
 }
