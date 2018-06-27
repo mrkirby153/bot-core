@@ -1,13 +1,24 @@
 package com.mrkirby153.botcore.command
 
+import com.mrkirby153.botcore.command.args.ArgumentParseException
+import com.mrkirby153.botcore.shard.ShardManager
+import net.dv8tion.jda.core.JDA
 import java.util.LinkedList
+import java.util.regex.Pattern
+import kotlin.math.roundToInt
 
 /**
  * An executor for executing commands
  */
-class CommandExecutor {
+open class CommandExecutor(val jda: JDA? = null, val shardManager: ShardManager? = null) {
 
     val parentNode = SkeletonCommandNode("$\$ROOT$$")
+
+    private val resolvers = mutableMapOf<String, (LinkedList<String>) -> Any?>()
+
+    init {
+        this.registerDefaultResolvers()
+    }
 
     /**
      * Registers all the methods in the provided class annotated with @[Command] annotation
@@ -121,6 +132,92 @@ class CommandExecutor {
         this.register(cmd.newInstance())
     }
 
+    /**
+     * Adds a context resolver for resolving arguments
+     *
+     * @param name The name of the resolver
+     * @param resolver The argument resolver
+     */
+    fun addContextResolver(name: String, resolver: (LinkedList<String>) -> Any?) {
+        if (this.resolvers.containsKey(name.toLowerCase()))
+            throw IllegalArgumentException("The argument resolver '$name' is already registered")
+        this.resolvers[name] = resolver
+    }
+
+    /**
+     * Gets a context resolver by its name
+     *
+     * @param name The name of the resolver
+     */
+    fun getContextResolver(name: String) = this.resolvers[name]
+
+
+    private fun registerDefaultResolvers() {
+        // String resolver -- Matches strings surrounded in quotes
+        addContextResolver("string") { args ->
+            if (args.peek().matches(Regex("^(?<!\\\\)\".*"))) {
+                val string = buildString {
+                    while (true) {
+                        if (args.peek() == null) {
+                            throw ArgumentParseException("Unmatched quotes")
+                        }
+                        val next = args.pop()
+                        append("$next ")
+                        if (next.matches(Regex(".*(?<!\\\\)\"\$"))) {
+                            break
+                        }
+                    }
+                }
+                string.trim().substring(1..(string.length - 3)).replace("\\\"", "\"")
+            } else {
+                args.pop()
+            }
+        }
+        addContextResolver("string...") { args ->
+            buildString {
+                while (args.peek() != null)
+                    append("${args.pop()} ")
+            }.trim().replace(Regex("^(?<!\\\\)\\\""), "").replace(Regex("(?<!\\\\)\\\"\$"), "")
+        }
+        addContextResolver("snowflake") { args ->
+            val first = args.pop()
+            if (first.matches(Regex("<@!?\\d{17,18}>"))) {
+                val pattern = Pattern.compile("\\d{17,18}")
+                val matcher = pattern.matcher(first)
+                if (matcher.find()) {
+                    try {
+                        return@addContextResolver matcher.group()
+                    } catch (e: IllegalStateException) {
+                        throw ArgumentParseException("Could not convert `$first` to `snowflake`")
+                    }
+                }
+            }
+            if (!first.matches(Regex("\\d{17,18}")))
+                throw ArgumentParseException("Could not convert `$first` to `snowflake`")
+            return@addContextResolver first
+        }
+        addContextResolver("user") { args ->
+            val m = args.peek()
+            val id = getContextResolver("snowflake")?.invoke(args) as? String
+                    ?: throw ArgumentParseException("Could not convert `$m` to `user`")
+
+            when {
+                shardManager != null -> shardManager.getUserById(id)
+                jda != null -> jda.getUserById(id)
+                else -> null
+            }
+        }
+        addContextResolver("number") { args ->
+            val num = args.pop()
+            num.toDoubleOrNull() ?: throw ArgumentParseException(
+                    "Could not convert `$num` to `number`")
+        }
+        addContextResolver("int") { args ->
+            val m = args.peek()
+            (getContextResolver("number")?.invoke(args) as? Double)?.roundToInt()
+                    ?: throw ArgumentParseException("Could not convert `$m` to `int`")
+        }
+    }
 
     /**
      * Metadata about commands
