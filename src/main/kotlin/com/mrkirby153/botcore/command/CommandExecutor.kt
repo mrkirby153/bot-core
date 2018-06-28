@@ -17,7 +17,7 @@ import kotlin.math.roundToInt
  * An executor for executing commands
  */
 
-open class CommandExecutor(private val prefix: String = "",
+open class CommandExecutor(private val prefix: String,
                            private val mentionMode: MentionMode = MentionMode.OPTIONAL,
                            private val jda: JDA? = null,
                            private val shardManager: ShardManager? = null) {
