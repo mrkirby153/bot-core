@@ -19,7 +19,7 @@ import java.net.URL
  * @param token The bot's token
  * @param numShards The number of shards to start
  */
-class ShardManager(private val token: String, val numShards: Int) {
+class ShardManager(private val token: String, val numShards: Int = 1) {
 
     /**
      * A list of all the shards
@@ -49,8 +49,10 @@ class ShardManager(private val token: String, val numShards: Int) {
      * If it's been less than 5 seconds since the last shard was started, it will wait 5 seconds as per the spec
      *
      * @param id The id of the shard
+     * @param async If the shard should be started async
      */
-    fun addShard(id: Int) {
+    @JvmOverloads
+    fun addShard(id: Int, async: Boolean = true) {
         if (id > numShards) {
             throw IllegalArgumentException("Cannot start more than the allocated amount of shards")
         }
@@ -60,7 +62,7 @@ class ShardManager(private val token: String, val numShards: Int) {
         }
         startingShards.add(id)
         LOGGER.info("Starting shard $id")
-        val jda = buildJDA(id)
+        val jda = buildJDA(id, async)
         shards.add(Shard(jda, id))
         lastStartTime = System.currentTimeMillis()
     }
@@ -163,8 +165,8 @@ class ShardManager(private val token: String, val numShards: Int) {
      *
      * @id The shard id of the instance
      */
-    private fun buildJDA(id: Int): JDA {
-        return JDABuilder(AccountType.BOT).run {
+    private fun buildJDA(id: Int, async: Boolean = true): JDA {
+        val builder = JDABuilder(AccountType.BOT).run {
             setToken(this@ShardManager.token)
             setAutoReconnect(true)
             setBulkDeleteSplittingEnabled(false)
@@ -179,7 +181,11 @@ class ShardManager(private val token: String, val numShards: Int) {
                     event.jda.addEventListener(*eventListeners.toTypedArray())
                 }
             })
-            buildAsync()
+        }
+        if (async) {
+            return builder.buildAsync()
+        } else {
+            return builder.buildBlocking()
         }
     }
 
@@ -215,34 +221,45 @@ class ShardManager(private val token: String, val numShards: Int) {
      * Restarts a shard
      */
     @JvmOverloads
-    fun restart(id: Int = 1) {
+    fun restart(id: Int = 1, async: Boolean = true) {
         if (id > numShards)
             throw IllegalArgumentException(
                     "Cannot restart a shard id greater than the max number of shards")
         LOGGER.debug("Shard $id is restarting")
         shutdown(id)
-        addShard(id)
+        addShard(id, async)
         LOGGER.debug("Shard $id has restarted")
     }
 
     /**
      * Starts all shards async
      */
-    fun startAllShards() {
-        startupThread = Thread {
-            LOGGER.debug("Starting all shards")
-            for (i in 0 until numShards) {
-                addShard(i)
-                Thread.sleep(5500)
+    @JvmOverloads
+    fun startAllShards(async: Boolean = true) {
+        if (async) {
+            startupThread = Thread {
+                LOGGER.debug("Starting all shards Async")
+                for (i in 0 until numShards) {
+                    addShard(i, async)
+                    Thread.sleep(5500)
+                }
+                LOGGER.debug("All shards started! Terminating thread")
+                startupThread = null
             }
-            LOGGER.debug("All shards started! Terminating thread")
-            startupThread = null
+            startupThread?.apply {
+                name = "ShardManager-StartupThread"
+                isDaemon = false
+            }
+            startupThread?.start()
+        } else {
+            LOGGER.debug("Starting all shards Sync")
+            for (i in 0 until numShards) {
+                addShard(i, async)
+                if (numShards > 1)
+                    Thread.sleep(5500)
+            }
+            LOGGER.debug("All shards started!")
         }
-        startupThread?.apply {
-            name = "ShardManager-StartupThread"
-            isDaemon = false
-        }
-        startupThread?.start()
     }
 
     companion object {
