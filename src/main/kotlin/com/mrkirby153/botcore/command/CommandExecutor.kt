@@ -28,6 +28,7 @@ open class CommandExecutor(private val prefix: String,
 
     var alertUnknownCommand = true
     var alertNoClearance = true
+    var commandsInDM = false
 
     private val resolvers = mutableMapOf<String, (LinkedList<String>) -> Any?>()
 
@@ -97,7 +98,7 @@ open class CommandExecutor(private val prefix: String,
     }
 
     fun execute(message: Message) {
-        if (message.channelType == ChannelType.PRIVATE)
+        if (message.channelType == ChannelType.PRIVATE && !commandsInDM)
             return
         var raw = message.contentRaw
         if (raw.isEmpty())
