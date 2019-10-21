@@ -4,10 +4,10 @@ import com.mrkirby153.botcore.command.args.ArgumentParseException
 import com.mrkirby153.botcore.command.args.ArgumentParser
 import com.mrkirby153.botcore.command.args.CommandContext
 import com.mrkirby153.botcore.shard.ShardManager
-import net.dv8tion.jda.core.JDA
-import net.dv8tion.jda.core.entities.ChannelType
-import net.dv8tion.jda.core.entities.Member
-import net.dv8tion.jda.core.entities.Message
+import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.entities.ChannelType
+import net.dv8tion.jda.api.entities.Member
+import net.dv8tion.jda.api.entities.Message
 import java.lang.reflect.InvocationTargetException
 import java.util.LinkedList
 import java.util.regex.Pattern
@@ -139,7 +139,7 @@ open class CommandExecutor(private val prefix: String,
             return
         }
 
-        val userClearance = this.clearanceResolver.invoke(message.member)
+        val userClearance = this.clearanceResolver.invoke(message.member!!)
         val metadata = resolved.metadata
 
         if (userClearance < metadata.clearance) {

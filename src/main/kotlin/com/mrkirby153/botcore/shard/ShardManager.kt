@@ -1,13 +1,13 @@
 package com.mrkirby153.botcore.shard
 
 import com.mrkirby153.botcore.LOGGER
-import net.dv8tion.jda.core.AccountType
-import net.dv8tion.jda.core.JDA
-import net.dv8tion.jda.core.JDABuilder
-import net.dv8tion.jda.core.entities.Guild
-import net.dv8tion.jda.core.entities.User
-import net.dv8tion.jda.core.events.ReadyEvent
-import net.dv8tion.jda.core.hooks.ListenerAdapter
+import net.dv8tion.jda.api.AccountType
+import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.JDABuilder
+import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.User
+import net.dv8tion.jda.api.events.ReadyEvent
+import net.dv8tion.jda.api.hooks.ListenerAdapter
 import org.json.JSONObject
 import org.json.JSONTokener
 import java.net.HttpURLConnection
@@ -166,13 +166,13 @@ class ShardManager(private val token: String, val numShards: Int = 1) {
      * @id The shard id of the instance
      */
     private fun buildJDA(id: Int, async: Boolean = true): JDA {
-        val builder = JDABuilder(AccountType.BOT).run {
+        val builder = JDABuilder(AccountType.BOT).apply {
             setToken(this@ShardManager.token)
             setAutoReconnect(true)
             setBulkDeleteSplittingEnabled(false)
             if (this@ShardManager.numShards > 1)
                 useSharding(id, numShards)
-            addEventListener(object : ListenerAdapter() {
+            addListener(object : ListenerAdapter() {
                 override fun onReady(event: ReadyEvent) {
                     LOGGER.debug("Shard $id is ready")
                     startingShards.remove(id)
@@ -182,10 +182,10 @@ class ShardManager(private val token: String, val numShards: Int = 1) {
                 }
             })
         }
-        if (async) {
-            return builder.buildAsync()
+        return if (async) {
+            builder.build()
         } else {
-            return builder.buildBlocking()
+            builder.build().awaitReady()
         }
     }
 

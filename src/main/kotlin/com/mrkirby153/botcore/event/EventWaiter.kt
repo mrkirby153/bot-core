@@ -1,7 +1,8 @@
 package com.mrkirby153.botcore.event
 
-import net.dv8tion.jda.core.events.Event
-import net.dv8tion.jda.core.hooks.EventListener
+import net.dv8tion.jda.api.events.Event
+import net.dv8tion.jda.api.events.GenericEvent
+import net.dv8tion.jda.api.hooks.EventListener
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
@@ -17,8 +18,8 @@ class EventWaiter(
 
     private val waitingEvents = mutableMapOf<Class<*>, MutableSet<WaitingEvent<*>>>()
 
-    override fun onEvent(event: Event) {
-        var c: Class<in Event>? = event.javaClass
+    override fun onEvent(event: GenericEvent) {
+        var c: Class<in GenericEvent>? = event.javaClass
         while (c != null) {
             val events = waitingEvents[c] ?: return
             events.removeIf { it.attempt(event) }
@@ -63,11 +64,11 @@ class EventWaiter(
         pool.shutdown()
     }
 
-    private class WaitingEvent<T : Event>(val predicate: Predicate<T>,
+    private class WaitingEvent<T : GenericEvent>(val predicate: Predicate<T>,
                                           val action: Consumer<T>) {
 
         @Suppress("UNCHECKED_CAST")
-        fun attempt(event: Event): Boolean {
+        fun attempt(event: GenericEvent): Boolean {
             return if (predicate.test(event as T)) {
                 action.accept(event)
                 true
