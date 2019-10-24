@@ -5,4 +5,4 @@ package com.mrkirby153.botcore.command.args
  *
  * @param msg The error message
  */
-class ArgumentParseException(msg: String) : Exception(msg)
+class ArgumentParseException(msg: String) : RuntimeException(msg)
