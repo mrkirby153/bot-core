@@ -22,7 +22,7 @@ open class CommandExecutor(private val prefix: String,
                            private val jda: JDA? = null,
                            private val shardManager: ShardManager? = null) {
 
-    val parentNode = SkeletonCommandNode("$\$ROOT$$")
+    private val parentNode = SkeletonCommandNode("$\$ROOT$$")
 
     lateinit var clearanceResolver: (Member) -> Int
 
@@ -38,11 +38,20 @@ open class CommandExecutor(private val prefix: String,
     /**
      * Registers all the methods in the provided class annotated with @[Command] annotation
      *
+     * If `declaredOnly` is set to true, then only methods returned by [Class.getDeclaredMethods]
+     * will be scanned. Otherwise, methods returned by [Class.getMethods] will be scanned
+     *
      * @param instance The class to register
+     * @param clazz The class of the instance. If null, the instance's [Object.getClass] method
+     * will be used
+     * @param declaredOnly If only methods declared in the class should be scanned
      */
-    fun register(instance: Any) {
-        val potentialMethods = instance.javaClass.declaredMethods.filter {
-            it.getAnnotation(Command::class.java) != null
+    @JvmOverloads
+    fun register(instance: Any, clazz: Class<*>? = null, declaredOnly: Boolean = true) {
+        val effectiveClass = clazz ?: instance.javaClass
+        val methods = if (declaredOnly) effectiveClass.declaredMethods else effectiveClass.methods;
+        val potentialMethods = methods.filter {
+            it.isAnnotationPresent(Command::class.java)
         }
 
         potentialMethods.forEach { method ->
@@ -171,7 +180,7 @@ open class CommandExecutor(private val prefix: String,
         } catch (e: InvocationTargetException) {
             if (e.targetException is CommandException) {
                 message.channel.sendMessage(":no_entry: ${e.targetException.message}").queue()
-            } else{
+            } else {
                 e.printStackTrace()
                 message.channel.sendMessage(":no_entry: An unknown error occurred").queue()
             }
