@@ -106,8 +106,6 @@ open class CommandExecutor(private val prefix: String,
     }
 
     fun execute(message: Message) {
-        if (message.channelType == ChannelType.PRIVATE)
-            return
         var raw = message.contentRaw
         if (raw.isEmpty())
             return
@@ -148,7 +146,8 @@ open class CommandExecutor(private val prefix: String,
             return
         }
 
-        val userClearance = this.clearanceResolver.invoke(message.member!!)
+        val userClearance = if (message.channelType == ChannelType.PRIVATE) 0 else this.clearanceResolver.invoke(
+                message.member!!)
         val metadata = resolved.metadata
 
         if (userClearance < metadata.clearance) {
@@ -238,7 +237,7 @@ open class CommandExecutor(private val prefix: String,
      * @param cmd The class of the command to register
      */
     fun register(cmd: Class<*>) {
-        this.register(cmd.newInstance())
+        this.register(cmd.getConstructor().newInstance())
     }
 
     /**
