@@ -5,7 +5,7 @@
 plugins {
     id 'java'
     id 'maven-publish'
-    id 'org.jetbrains.kotlin.jvm' version '1.3.50'
+    id 'org.jetbrains.kotlin.jvm' version '1.3.72'
 }
 
 repositories {
@@ -18,7 +18,7 @@ repositories {
 
 dependencies {
     implementation 'org.slf4j:slf4j-api:1.7.25'
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.3.50'
+    compile 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
     implementation 'org.json:json:20180130'
     testImplementation 'org.jetbrains.kotlin:kotlin-test:1.2.50'
     compileOnly 'net.dv8tion:JDA:4.1.1_143'
@@ -39,19 +39,6 @@ publishing {
         }
     }
 }
-
-compileKotlin {
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
-}
-
-compileTestKotlin {
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
-}
-
 task sourceJar(type: Jar, dependsOn: project.classes) {
     classifier 'sources'
 }
@@ -83,5 +70,15 @@ publishing {
                 password propertyOrEnv('repositoryPassword', 'REPO_PASS')
             }
         }
+    }
+}
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
     }
 }
