@@ -19,6 +19,7 @@ import java.net.URL
  * @param token The bot's token
  * @param numShards The number of shards to start
  */
+@Deprecated("Use JDA's shard manager")
 class ShardManager(private val token: String, val numShards: Int = 1) {
 
     /**

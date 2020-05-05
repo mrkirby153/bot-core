@@ -2,6 +2,7 @@ package com.mrkirby153.botcore
 
 import com.mrkirby153.botcore.shard.ShardManager
 
+@Deprecated("Use JDA's shard manager")
 open class Bot(private val token: String, val shards: Int? = null) {
 
     private var ready = false
