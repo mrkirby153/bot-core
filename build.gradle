@@ -51,3 +51,37 @@ compileTestKotlin {
         jvmTarget = "1.8"
     }
 }
+
+task sourceJar(type: Jar, dependsOn: project.classes) {
+    classifier 'sources'
+}
+
+task javadocJar(type: Jar, dependsOn: project.javadoc) {
+    classifier 'javadoc'
+}
+
+
+String propertyOrEnv(property, env) {
+    return project.hasProperty(property)? project.properties[property] : System.getenv(env)
+}
+
+def publishUrl() {
+    if(project.version.endsWith('-SNAPSHOT'))
+        return "https://repo.mrkirby153.com/repository/maven-snapshots/"
+    else
+        return "https://repo.mrkirby153.com/repository/maven-releases/"
+}
+
+publishing {
+    tasks.publish.dependsOn build
+    repositories {
+        maven {
+            name = "mrkirby153"
+            url = publishUrl()
+            credentials {
+                username propertyOrEnv('repositoryUsername', 'REPO_USERNAME')
+                password propertyOrEnv('repositoryPassword', 'REPO_PASS')
+            }
+        }
+    }
+}
