@@ -29,7 +29,7 @@ class ArgumentParser(private val arguments: Array<String>, private val argumentT
             if (argList.peek() != null) {
                 val resolver = executor.getContextResolver(type) ?: throw ArgumentParseException(
                         "The resolver `$type` is not found")
-                val data = resolver.invoke(argList)
+                val data = resolver.resolve(argList)
                 context.put(name, data)
             }
         }

@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.mrkirby153.botcore.spring.JDAAutoConfiguration,com.mrkirby153.botcore.spring.CommandAutoConfiguration

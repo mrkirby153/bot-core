@@ -3,6 +3,7 @@ package com.mrkirby153.botcore.command
 import com.mrkirby153.botcore.command.args.ArgumentParseException
 import com.mrkirby153.botcore.command.args.ArgumentParser
 import com.mrkirby153.botcore.command.args.CommandContext
+import com.mrkirby153.botcore.command.args.CommandContextResolver
 import com.mrkirby153.botcore.shard.ShardManager
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.ChannelType
@@ -20,16 +21,16 @@ import kotlin.math.roundToInt
 open class CommandExecutor(private val prefix: String,
                            private val mentionMode: MentionMode = MentionMode.OPTIONAL,
                            private val jda: JDA? = null,
-                           private val shardManager: ShardManager? = null) {
+                           private val shardManager: net.dv8tion.jda.api.sharding.ShardManager? = null) {
 
     private val parentNode = SkeletonCommandNode("$\$ROOT$$")
 
-    lateinit var clearanceResolver: (Member) -> Int
+    lateinit var clearanceResolver: ClearanceResolver
 
     var alertUnknownCommand = true
     var alertNoClearance = true
 
-    private val resolvers = mutableMapOf<String, (LinkedList<String>) -> Any?>()
+    private val resolvers = mutableMapOf<String, CommandContextResolver>()
 
     init {
         this.registerDefaultResolvers()
@@ -146,7 +147,7 @@ open class CommandExecutor(private val prefix: String,
             return
         }
 
-        val userClearance = if (message.channelType == ChannelType.PRIVATE) 0 else this.clearanceResolver.invoke(
+        val userClearance = if (message.channelType == ChannelType.PRIVATE) 0 else this.clearanceResolver.resolve(
                 message.member!!)
         val metadata = resolved.metadata
 
@@ -246,10 +247,23 @@ open class CommandExecutor(private val prefix: String,
      * @param name The name of the resolver
      * @param resolver The argument resolver
      */
-    fun addContextResolver(name: String, resolver: (LinkedList<String>) -> Any?) {
+    fun addContextResolver(name: String, resolver: CommandContextResolver) {
         if (this.resolvers.containsKey(name.toLowerCase()))
             throw IllegalArgumentException("The argument resolver '$name' is already registered")
         this.resolvers[name] = resolver
+    }
+
+    /**
+     * Adds a context resolver for resolving arguments.
+     *
+     * **Note:** This wraps the Kotlin lambda in a [CommandContextResolver]
+     */
+    fun addKContextResolver(name: String, resolver: (LinkedList<String>) -> Any?) {
+        addContextResolver(name, object : CommandContextResolver {
+            override fun resolve(params: LinkedList<String>): Any? {
+                return resolver.invoke(params)
+            }
+        })
     }
 
     /**
@@ -262,7 +276,7 @@ open class CommandExecutor(private val prefix: String,
 
     private fun registerDefaultResolvers() {
         // String resolver -- Matches strings surrounded in quotes
-        addContextResolver("string") { args ->
+        addKContextResolver("string") { args ->
             if (args.peek().matches(Regex("^(?<!\\\\)\".*"))) {
                 val string = buildString {
                     while (true) {
@@ -281,20 +295,20 @@ open class CommandExecutor(private val prefix: String,
                 args.pop()
             }
         }
-        addContextResolver("string...") { args ->
+        addKContextResolver("string...") { args ->
             buildString {
                 while (args.peek() != null)
                     append("${args.pop()} ")
             }.trim().replace(Regex("^(?<!\\\\)\\\""), "").replace(Regex("(?<!\\\\)\\\"\$"), "")
         }
-        addContextResolver("snowflake") { args ->
+        addKContextResolver("snowflake") { args ->
             val first = args.pop()
             if (first.matches(Regex("<@!?\\d{17,18}>"))) {
                 val pattern = Pattern.compile("\\d{17,18}")
                 val matcher = pattern.matcher(first)
                 if (matcher.find()) {
                     try {
-                        return@addContextResolver matcher.group()
+                        return@addKContextResolver matcher.group()
                     } catch (e: IllegalStateException) {
                         throw ArgumentParseException("Could not convert `$first` to `snowflake`")
                     }
@@ -302,11 +316,11 @@ open class CommandExecutor(private val prefix: String,
             }
             if (!first.matches(Regex("\\d{17,18}")))
                 throw ArgumentParseException("Could not convert `$first` to `snowflake`")
-            return@addContextResolver first
+            return@addKContextResolver first
         }
-        addContextResolver("user") { args ->
+        addKContextResolver("user") { args ->
             val m = args.peek()
-            val id = getContextResolver("snowflake")?.invoke(args) as? String
+            val id = getContextResolver("snowflake")?.resolve(args) as? String
                     ?: throw ArgumentParseException("Could not convert `$m` to `user`")
 
             when {
@@ -315,14 +329,14 @@ open class CommandExecutor(private val prefix: String,
                 else -> null
             }
         }
-        addContextResolver("number") { args ->
+        addKContextResolver("number") { args ->
             val num = args.pop()
             num.toDoubleOrNull() ?: throw ArgumentParseException(
                     "Could not convert `$num` to `number`")
         }
-        addContextResolver("int") { args ->
+        addKContextResolver("int") { args ->
             val m = args.peek()
-            (getContextResolver("number")?.invoke(args) as? Double)?.roundToInt()
+            (getContextResolver("number")?.resolve(args) as? Double)?.roundToInt()
                     ?: throw ArgumentParseException("Could not convert `$m` to `int`")
         }
     }

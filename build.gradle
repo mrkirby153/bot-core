@@ -22,10 +22,14 @@ dependencies {
     implementation 'org.json:json:20180130'
     testImplementation 'org.jetbrains.kotlin:kotlin-test:1.2.50'
     compileOnly 'net.dv8tion:JDA:4.1.1_143'
+
+    // Spring dependencies for autoconfiguration in a spring project
+    compileOnly 'org.springframework:spring-context:5.2.6.RELEASE'
+    compileOnly 'org.springframework.boot:spring-boot-autoconfigure:2.3.0.RELEASE'
 }
 
 group = 'com.mrkirby153'
-version = '2.1-SNAPSHOT'
+version = '3.0-SNAPSHOT'
 sourceCompatibility = '1.8'
 
 java {
