@@ -4,7 +4,9 @@ import com.mrkirby153.botcore.command.args.ArgumentParseException
 import com.mrkirby153.botcore.command.args.ArgumentParser
 import com.mrkirby153.botcore.command.args.CommandContext
 import com.mrkirby153.botcore.command.args.CommandContextResolver
-import com.mrkirby153.botcore.shard.ShardManager
+import com.mrkirby153.botcore.command.help.Description
+import com.mrkirby153.botcore.command.help.HelpEntry
+import com.mrkirby153.botcore.command.help.Hidden
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.ChannelType
 import net.dv8tion.jda.api.entities.Member
@@ -62,7 +64,12 @@ open class CommandExecutor(private val prefix: String,
             val arguments = annotation.arguments
             val parent = annotation.parent
 
-            val metadata = CommandMetadata(cmdName, clearance, arguments.toList())
+            val desc = method.getAnnotation(
+                    Description::class.java)?.value ?: "No description provided"
+
+            val metadata = CommandMetadata(cmdName, clearance, arguments.toList(),
+                    method.isAnnotationPresent(
+                            Hidden::class.java), desc)
 
             var parentNode = (if (parent.isNotBlank()) this.parentNode.getChild(
                     parent) else this.parentNode)
@@ -164,8 +171,10 @@ open class CommandExecutor(private val prefix: String,
         val cmdContext: CommandContext = try {
             parser.parse()
         } catch (e: ArgumentParseException) {
-            message.channel.sendMessage(
-                    ":no_entry: ${e.message ?: "An unknown error occurred"}").queue()
+            message.channel.sendMessage(buildString {
+                appendln(":no_entry: ${e.message ?: "An unknown error occurred"}")
+                appendln("Usage: `${prefix}${resolved.metadata.name} ${resolved.metadata.arguments.joinToString(" ")}`")
+            }).queue()
             return
         }
 
@@ -274,6 +283,33 @@ open class CommandExecutor(private val prefix: String,
     fun getContextResolver(name: String) = this.resolvers[name]
 
 
+    /**
+     * Gets the command help. If a member is provided, only the commands that the member can access
+     * will be displayed in the help
+     *
+     * @param member The member to check clearance against
+     * @param node The command node to start from
+     * @param path The current command path
+     */
+    @JvmOverloads
+    fun getHelp(member: Member? = null, node: CommandNode = parentNode,
+                path: String = ""): List<HelpEntry> {
+        val entries = mutableListOf<HelpEntry>()
+        node.getChildren().forEach { child ->
+            if (child is ResolvedCommandNode) {
+                val metadata = child.metadata
+                if (member == null || metadata.clearance <= clearanceResolver.resolve(member)) {
+                    if (!metadata.hidden)
+                        entries.add(HelpEntry(path + " " + child.getName(), metadata.arguments,
+                                metadata.arguments.joinToString(" "), metadata.help))
+                }
+            }
+            entries.addAll(getHelp(member, child, path + " " + child.getName()))
+        }
+        return entries;
+    }
+
+
     private fun registerDefaultResolvers() {
         // String resolver -- Matches strings surrounded in quotes
         addKContextResolver("string") { args ->
@@ -310,7 +346,8 @@ open class CommandExecutor(private val prefix: String,
                     try {
                         return@addKContextResolver matcher.group()
                     } catch (e: IllegalStateException) {
-                        throw ArgumentParseException("Could not convert `$first` to `snowflake`")
+                        throw ArgumentParseException(
+                                "Could not convert `$first` to `snowflake`")
                     }
                 }
             }
@@ -344,7 +381,9 @@ open class CommandExecutor(private val prefix: String,
     /**
      * Metadata about commands
      */
-    data class CommandMetadata(val name: String, val clearance: Int, val arguments: List<String>)
+    data class CommandMetadata(val name: String, val clearance: Int,
+                               val arguments: List<String>,
+                               val hidden: Boolean, val help: String)
 
     enum class MentionMode {
         DISABLED,
