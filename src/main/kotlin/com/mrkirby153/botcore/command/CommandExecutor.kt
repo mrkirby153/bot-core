@@ -8,6 +8,7 @@ import com.mrkirby153.botcore.command.help.Description
 import com.mrkirby153.botcore.command.help.HelpEntry
 import com.mrkirby153.botcore.command.help.Hidden
 import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.ChannelType
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Message
@@ -69,7 +70,7 @@ open class CommandExecutor(private val prefix: String,
 
             val metadata = CommandMetadata(cmdName, clearance, arguments.toList(),
                     method.isAnnotationPresent(
-                            Hidden::class.java), desc)
+                            Hidden::class.java), desc, annotation.permissions)
 
             var parentNode = (if (parent.isNotBlank()) this.parentNode.getChild(
                     parent) else this.parentNode)
@@ -173,7 +174,9 @@ open class CommandExecutor(private val prefix: String,
         } catch (e: ArgumentParseException) {
             message.channel.sendMessage(buildString {
                 appendln(":no_entry: ${e.message ?: "An unknown error occurred"}")
-                appendln("Usage: `${prefix}${resolved.metadata.name} ${resolved.metadata.arguments.joinToString(" ")}`")
+                appendln(
+                        "Usage: `${prefix}${resolved.metadata.name} ${resolved.metadata.arguments.joinToString(
+                                " ")}`")
             }).queue()
             return
         }
@@ -184,6 +187,23 @@ open class CommandExecutor(private val prefix: String,
         context.commandName = metadata.name
         context.commandPrefix = if (isMention) "<@$botId>" else prefix
 
+        if (resolved.metadata.permissions.isNotEmpty()) {
+            // Check permissions
+            val missingPerms = mutableListOf<Permission>()
+            resolved.metadata.permissions.forEach { permission ->
+                if (!message.guild.selfMember.hasPermission(message.textChannel, permission)) {
+                    missingPerms.add(permission)
+                }
+            }
+            if (missingPerms.isNotEmpty()) {
+                if (message.guild.selfMember.hasPermission(message.textChannel,
+                                Permission.MESSAGE_WRITE))
+                    message.channel.sendMessage(
+                            ":no_entry: I am missing the following permissions: `${missingPerms.joinToString(
+                                    ", ") { it.getName() }}").queue()
+                return
+            }
+        }
         try {
             method.invoke(resolved.instance, context, cmdContext)
         } catch (e: InvocationTargetException) {
@@ -383,7 +403,8 @@ open class CommandExecutor(private val prefix: String,
      */
     data class CommandMetadata(val name: String, val clearance: Int,
                                val arguments: List<String>,
-                               val hidden: Boolean, val help: String)
+                               val hidden: Boolean, val help: String,
+                               val permissions: Array<Permission>)
 
     enum class MentionMode {
         DISABLED,
