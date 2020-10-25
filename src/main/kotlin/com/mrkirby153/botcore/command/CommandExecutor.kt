@@ -10,10 +10,13 @@ import com.mrkirby153.botcore.command.help.Hidden
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.ChannelType
+import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Message
 import java.lang.reflect.InvocationTargetException
 import java.util.LinkedList
+import java.util.function.BiFunction
+import java.util.function.Function
 import java.util.regex.Pattern
 import kotlin.math.roundToInt
 
@@ -34,6 +37,10 @@ open class CommandExecutor(private val prefix: String,
     var alertNoClearance = true
 
     private val resolvers = mutableMapOf<String, CommandContextResolver>()
+
+    private var prefixResolver: (Message) -> String = {
+        prefix // Default we want to just return the prefix
+    }
 
     init {
         this.registerDefaultResolvers()
@@ -121,6 +128,8 @@ open class CommandExecutor(private val prefix: String,
 
         val botId = message.guild.selfMember.user.id
         val isMention = raw.matches(Regex("^<@!?$botId>.*"))
+
+        val prefix = this.prefixResolver.invoke(message)
 
         when (mentionMode) {
             MentionMode.REQUIRED -> {
@@ -395,6 +404,23 @@ open class CommandExecutor(private val prefix: String,
             val m = args.peek()
             (getContextResolver("number")?.resolve(args) as? Double)?.roundToInt()
                     ?: throw ArgumentParseException("Could not convert `$m` to `int`")
+        }
+    }
+
+
+    /**
+     * Overrides the bot's prefix resolver with the given [resolver]
+     */
+    fun overridePrefixResolver(resolver: (Message) -> String) {
+        this.prefixResolver = resolver
+    }
+
+    /**
+     * Overrides the bot's prefix resolver with the given [resolver]
+     */
+    fun overridePrefixResolver(resolver: Function<Message, String>) {
+        overridePrefixResolver {
+            resolver.apply(it)
         }
     }
 
