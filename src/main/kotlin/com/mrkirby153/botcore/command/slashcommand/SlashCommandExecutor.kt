@@ -2,7 +2,6 @@ package com.mrkirby153.botcore.command.slashcommand
 
 import com.mrkirby153.botcore.command.ClearanceResolver
 import com.mrkirby153.botcore.command.CommandException
-import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.Category
 import net.dv8tion.jda.api.entities.IMentionable
 import net.dv8tion.jda.api.entities.Member
@@ -11,20 +10,18 @@ import net.dv8tion.jda.api.entities.TextChannel
 import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.entities.VoiceChannel
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent
-import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData
-import net.dv8tion.jda.api.sharding.ShardManager
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import javax.annotation.Nonnull
+import javax.annotation.Nullable
 import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.jvm.javaType
 import kotlin.reflect.jvm.kotlinFunction
-
-private val slashCommandParameterMaps = mutableMapOf<Class<*>, OptionType>()
 
 private val DEFAULT_CLEARANCE_RESOLVER = object : ClearanceResolver {
     override fun resolve(member: Member): Int {
@@ -38,8 +35,6 @@ private val DEFAULT_CLEARANCE_RESOLVER = object : ClearanceResolver {
 }
 
 class SlashCommandExecutor(
-    private val jda: JDA? = null,
-    private val shardManager: ShardManager? = null,
     private val clearanceResolver: ClearanceResolver = DEFAULT_CLEARANCE_RESOLVER
 ) {
 
@@ -48,31 +43,31 @@ class SlashCommandExecutor(
      */
     private val rootNode = SlashCommandNode("__ROOT__", path = "")
 
+    /**
+     * A list of custom slash command resolvers
+     */
+    private val slashCommandResolvers = mutableMapOf<Class<*>, TypeResolver<*>>()
+
+    private var defaultAvailability: Array<out SlashCommandAvailability> =
+        arrayOf(SlashCommandAvailability.DM, SlashCommandAvailability.GUILD)
+
 
     init {
-        initializeSlashCommandParameterMap()
-        if (jda == null && shardManager == null) {
-            throw IllegalArgumentException("JDA and ShardManager cannot both be null")
-        }
-    }
-
-    /**
-     * Initializes the slash command parameter map array
-     */
-    private fun initializeSlashCommandParameterMap() {
-        slashCommandParameterMaps[String::class.java] = OptionType.STRING
-        slashCommandParameterMaps[Integer::class.java] = OptionType.INTEGER
-        slashCommandParameterMaps[Int::class.javaPrimitiveType!!] = OptionType.INTEGER
-        slashCommandParameterMaps[Long::class.java] = OptionType.INTEGER
-        slashCommandParameterMaps[Long::class.javaPrimitiveType!!] = OptionType.INTEGER
-        slashCommandParameterMaps[Boolean::class.java] = OptionType.BOOLEAN
-        slashCommandParameterMaps[Boolean::class.javaPrimitiveType!!] = OptionType.BOOLEAN
-        slashCommandParameterMaps[User::class.java] = OptionType.USER
-        slashCommandParameterMaps[TextChannel::class.java] = OptionType.CHANNEL
-        slashCommandParameterMaps[VoiceChannel::class.java] = OptionType.CHANNEL
-        slashCommandParameterMaps[Category::class.java] = OptionType.CHANNEL
-        slashCommandParameterMaps[Role::class.java] = OptionType.ROLE
-        slashCommandParameterMaps[IMentionable::class.java] = OptionType.MENTIONABLE
+        // Add default slash command resolvers
+        slashCommandResolvers[String::class.java] = STRING_TYPE_RESOLVER
+        slashCommandResolvers[Integer::class.java] = INT_TYPE_RESOLVER
+        slashCommandResolvers[Int::class.javaPrimitiveType!!] = INT_TYPE_RESOLVER
+        slashCommandResolvers[Long::class.java] = LONG_TYPE_RESOLVER
+        slashCommandResolvers[Long::class.javaPrimitiveType!!] = LONG_TYPE_RESOLVER
+        slashCommandResolvers[java.lang.Boolean::class.java] = BOOLEAN_TYPE_RESOLVER
+        slashCommandResolvers[Boolean::class.java] = BOOLEAN_TYPE_RESOLVER
+        slashCommandResolvers[Boolean::class.javaPrimitiveType!!] = BOOLEAN_TYPE_RESOLVER
+        slashCommandResolvers[User::class.java] = USER_TYPE_RESOLVER
+        slashCommandResolvers[TextChannel::class.java] = TEXT_CHANNEL_TYPE_RESOLVER
+        slashCommandResolvers[VoiceChannel::class.java] = VOICE_CHANNEL_TYPE_RESOLVER
+        slashCommandResolvers[Category::class.java] = CATEGORY_TYPE_RESOLVER
+        slashCommandResolvers[Role::class.java] = ROLE_TYPE_RESOLVER
+        slashCommandResolvers[IMentionable::class.java] = MENTIONABLE_TYPE_RESOLVER
     }
 
     /**
@@ -81,7 +76,7 @@ class SlashCommandExecutor(
      * used instead
      */
     @JvmOverloads
-    fun <T : Any> discoverAndRegisterSlashCommands(instance: T, clazz: Class<T>? = null) {
+    fun discoverAndRegisterSlashCommands(instance: Any, clazz: Class<*>? = null) {
         val providedClass = clazz ?: instance.javaClass
         providedClass.declaredMethods.filter { it.isAnnotationPresent(SlashCommand::class.java) }
             .forEach { method ->
@@ -94,6 +89,23 @@ class SlashCommandExecutor(
                 node.availability = annotation.availability
                 node.method = method
             }
+    }
+
+    /**
+     * Associates the provided [typeResolver] with the given [class]
+     */
+    fun registerTypeResolver(`class`: Class<*>, typeResolver: TypeResolver<*>) {
+        if (slashCommandResolvers.containsKey(`class`)) {
+            throw java.lang.IllegalArgumentException("$`class` has a previously associated resolver")
+        }
+        slashCommandResolvers[`class`] = typeResolver
+    }
+
+    /**
+     * Override the default availability of slash commands
+     */
+    fun setDefaultCommandAvailability(vararg availability: SlashCommandAvailability) {
+        defaultAvailability = availability
     }
 
     /**
@@ -143,6 +155,7 @@ class SlashCommandExecutor(
                     node.options.forEach(data::addOption)
                 }
             }
+            commands.add(data)
         }
         return commands
     }
@@ -177,27 +190,32 @@ class SlashCommandExecutor(
                 method.kotlinFunction ?: throw IllegalArgumentException("This should never happen")
             kFunction.parameters.filter { it.findAnnotation<SlashCommandParameter>() != null }
                 .forEach { p ->
-                    val optionType = slashCommandParameterMaps[p.type.javaType]
-                        ?: throw IllegalArgumentException("Unrecognized option type for ${p.name} (${p.type}) on ${method.declaringClass}#${method.name}")
+                    val resolver = slashCommandResolvers[p.type.javaType]
+                        ?: throw IllegalArgumentException("No resolver for option type ${p.name} (${p.type}) on ${method.declaringClass}#${method.name}")
                     val annotation =
                         p.findAnnotation<SlashCommandParameter>() ?: throw IllegalArgumentException(
                             "This should never happen"
                         )
-                    val data = OptionData(optionType, annotation.name, annotation.description)
+                    val data =
+                        OptionData(resolver.optionType, annotation.name, annotation.description)
                     // If the type is non-null this option should be required
                     data.isRequired = !p.type.isMarkedNullable
+                    if((p.type as? Class<*>)?.isPrimitive == true) {
+                        data.isRequired = true
+                    }
                     options.add(data)
                 }
         } else {
             // This is a java function
             method.parameters.filter { it.isAnnotationPresent(SlashCommandParameter::class.java) }
                 .forEach { p ->
-                    val optionType = slashCommandParameterMaps[p.type]
-                        ?: throw IllegalArgumentException("Unrecognized option type for ${p.name} (${p.type}) on ${method.declaringClass}#${method.name}")
+                    val resolver = slashCommandResolvers[p.type]
+                        ?: throw IllegalArgumentException("No resolver for option type ${p.name} (${p.type}) on ${method.declaringClass}#${method.name}")
                     val annotation = p.getAnnotation(SlashCommandParameter::class.java)
-                    val data = OptionData(optionType, annotation.name, annotation.description)
+                    val data =
+                        OptionData(resolver.optionType, annotation.name, annotation.description)
                     // If the nonnull annotation is present, set it as non-null
-                    data.isRequired = p.isAnnotationPresent(Nonnull::class.java)
+                    data.isRequired = !p.isAnnotationPresent(Nullable::class.java)
                     if (p.type.isPrimitive) {
                         data.isRequired = true
                     }
@@ -249,52 +267,23 @@ class SlashCommandExecutor(
                 val parameters = arrayOfNulls<Any>(methodParams.size)
                 parameters[0] = event
                 methodParams.forEachIndexed { i, param ->
+                    if (i == 0) {
+                        // Param 0 is always the SlashCommandEvent
+                        return@forEachIndexed
+                    }
                     val annotation = param.getAnnotation(SlashCommandParameter::class.java)
-                    val map = event.getOption(annotation.name)
-                    if (map != null) {
-                        when (map.type) {
-                            OptionType.UNKNOWN, OptionType.SUB_COMMAND, OptionType.SUB_COMMAND_GROUP -> {
-                            }
-                            OptionType.STRING ->
-                                parameters[i] = map.asString
-
-                            OptionType.INTEGER -> {
-                                val value = map.asLong
-                                if (param.type == Int::class.java || param.type == Int::class.javaPrimitiveType) {
-                                    parameters[i] = value.toInt()
-                                } else {
-                                    parameters[i] = value
-                                }
-                            }
-                            OptionType.BOOLEAN ->
-                                parameters[i] = map.asBoolean
-                            OptionType.USER ->
-                                parameters[i] = map.asUser
-
-                            OptionType.CHANNEL -> {
-                                val channel = map.asGuildChannel
-                                val expectedType = param.type
-                                if (!expectedType.isAssignableFrom(channel.javaClass)) {
-                                    event.reply(
-                                        ":no_entry: Wrong channel type provided for `${map.name}`. Expected ${
-                                            localizeChannelType(
-                                                expectedType
-                                            )
-                                        }"
-                                    ).setEphemeral(true).queue()
-                                    return
-                                }
-                                parameters[i] = expectedType.cast(channel)
-                            }
-                            OptionType.ROLE ->
-                                parameters[i] = map.asRole
-                            OptionType.MENTIONABLE ->
-                                parameters[i] = map.asMentionable
-                        }
+                    val map = event.getOption(annotation.name) ?: return@forEachIndexed
+                    val paramType = param.type
+                    val resolver = slashCommandResolvers[paramType]
+                        ?: throw TypeResolutionException("Unknown type resolver for type $paramType")
+                    try {
+                        parameters[i] = resolver.resolver.invoke(map)
+                    } catch (e: TypeResolutionException) {
+                        event.reply(":no_entry: `${map.name}`: ${e.message ?: "An unknown error occurred"}")
                     }
                 }
                 try {
-                    node.method!!.invoke(node.classInstance, parameters)
+                    node.method!!.invoke(node.classInstance, *parameters)
                 } catch (e: InvocationTargetException) {
                     val cause = e.cause
                     if (cause is CommandException) {
@@ -314,29 +303,6 @@ class SlashCommandExecutor(
             e.printStackTrace()
             event.reply(":no_entry: Something went wrong executing your command: ${e.message}")
                 .setEphemeral(true).queue()
-        }
-    }
-
-    private fun localizeChannelType(type: Class<*>): String {
-        return when (type) {
-            VoiceChannel::class.java -> "Voice Channel"
-            TextChannel::class.java -> "Text Channel"
-            Category::class.java -> "Category"
-            else -> type.toString()
-        }
-    }
-
-    companion object {
-
-        private var defaultAvailability: Array<out SlashCommandAvailability> =
-            arrayOf(SlashCommandAvailability.DM, SlashCommandAvailability.GUILD)
-
-        /**
-         * Override the default availability of slash commands
-         */
-        @JvmStatic
-        fun setDefaultCommandAvailability(vararg availability: SlashCommandAvailability) {
-            defaultAvailability = availability
         }
     }
 }
