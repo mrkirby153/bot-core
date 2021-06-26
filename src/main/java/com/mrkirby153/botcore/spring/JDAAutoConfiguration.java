@@ -19,6 +19,7 @@ import org.springframework.context.annotation.Configuration;
 import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
 
+@ConditionalOnProperty("bot.token")
 @Configuration
 public class JDAAutoConfiguration {
     private static final Logger log = LoggerFactory.getLogger(JDAAutoConfiguration.class);
