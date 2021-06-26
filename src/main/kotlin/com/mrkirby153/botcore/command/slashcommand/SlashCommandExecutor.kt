@@ -135,8 +135,8 @@ class SlashCommandExecutor(
                 hasSubCommand -> {
                     nodeChildren.forEach {
                         val subcommandData = SubcommandData(it.name, it.description)
-                        it.options.forEach(subcommandData::addOption)
-                        data.addSubcommand(subcommandData)
+                        subcommandData.addOptions(it.options)
+                        data.addSubcommands(subcommandData)
                     }
                 }
                 hasGroupChildren -> {
@@ -145,14 +145,14 @@ class SlashCommandExecutor(
                         val subcommandGroupData = SubcommandGroupData(child.name, child.description)
                         subChildren.forEach { subChild ->
                             val subCommandData = SubcommandData(subChild.name, subChild.description)
-                            subChild.options.forEach(subCommandData::addOption)
-                            subcommandGroupData.addSubcommand(subCommandData)
+                            subCommandData.addOptions(subChild.options)
+                            subcommandGroupData.addSubcommands(subCommandData)
                         }
-                        data.addSubcommandGroup(subcommandGroupData)
+                        data.addSubcommandGroups(subcommandGroupData)
                     }
                 }
                 else -> {
-                    node.options.forEach(data::addOption)
+                    data.addOptions(node.options)
                 }
             }
             commands.add(data)
