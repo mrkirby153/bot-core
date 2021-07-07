@@ -20,7 +20,7 @@ class ArgumentParser(private val arguments: Array<String>, private val argumentT
         for (i in 0 until argumentTypes.size) {
             var argument = argumentTypes[i]
             val argType = ArgType.determine(argument)
-            argument = argument.replace(Regex("<|>|\\[|]"), "")
+            argument = argument.replace(Regex("[<>\[\]]"), "")
             val parts = argument.split(":")
             val name = parts[0]
             val type = parts[1]
