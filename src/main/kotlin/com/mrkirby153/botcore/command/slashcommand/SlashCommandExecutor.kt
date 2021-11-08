@@ -16,10 +16,8 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandData
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
-import javax.annotation.Nonnull
 import javax.annotation.Nullable
 import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.jvm.javaType
 import kotlin.reflect.jvm.kotlinFunction
 
@@ -200,7 +198,7 @@ class SlashCommandExecutor(
                         OptionData(resolver.optionType, annotation.name, annotation.description)
                     // If the type is non-null this option should be required
                     data.isRequired = !p.type.isMarkedNullable
-                    if((p.type as? Class<*>)?.isPrimitive == true) {
+                    if ((p.type as? Class<*>)?.isPrimitive == true) {
                         data.isRequired = true
                     }
                     options.add(data)
@@ -225,14 +223,40 @@ class SlashCommandExecutor(
         return options
     }
 
+    /**
+     * Returns true if this slash command executor can execute the command from the provided [event]
+     */
+    fun canExecute(event: SlashCommandEvent) = resolveNode(getCommandName(event), false) != null
+
+
+    private fun getCommandName(event: SlashCommandEvent) = buildString {
+        append(event.name)
+        if (event.subcommandGroup != null) {
+            append(" ${event.subcommandGroup} ${event.subcommandName}")
+        } else if (event.subcommandGroup != null) {
+            append(" ${event.subcommandName}")
+        }
+    }
+
+    /**
+     * Executes the provided [event]'s slash command if this executor is able (A command exists in
+     * its tree). Returns true if this executor was able to execute the slash command
+     */
+    fun executeSlashCommandIfAble(event: SlashCommandEvent): Boolean {
+        return if (canExecute(event)) {
+            executeSlashCommand(event)
+            true
+        } else {
+            false
+        }
+    }
+
+    /**
+     * Executes the slash command invoked by the provided [event]
+     */
     fun executeSlashCommand(event: SlashCommandEvent) {
         try {
-            var command = event.name
-            if (event.subcommandGroup != null) {
-                command += " ${event.subcommandGroup} ${event.subcommandName}"
-            } else if (event.subcommandName != null) {
-                command += " ${event.subcommandName}"
-            }
+            val command = getCommandName(event)
             val node = resolveNode(command, false)
 
             if (node != null) {
