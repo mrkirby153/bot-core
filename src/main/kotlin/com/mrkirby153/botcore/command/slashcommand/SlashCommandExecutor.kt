@@ -66,6 +66,7 @@ class SlashCommandExecutor(
         slashCommandResolvers[Category::class.java] = CATEGORY_TYPE_RESOLVER
         slashCommandResolvers[Role::class.java] = ROLE_TYPE_RESOLVER
         slashCommandResolvers[IMentionable::class.java] = MENTIONABLE_TYPE_RESOLVER
+        slashCommandResolvers[Enum::class.java] = ENUM_TYPE_RESOLVER
     }
 
     /**
@@ -182,13 +183,24 @@ class SlashCommandExecutor(
     private fun discoverOptions(method: Method): List<OptionData> {
         val options = mutableListOf<OptionData>()
         method.trySetAccessible()
+        fun addChoices(resolver: TypeResolver<*>, type: Class<*>, data: OptionData) {
+            if(resolver.optionType.canSupportChoices()) {
+                val choices = resolver.optionResolver.invoke(type)
+                if(choices.size > 25)
+                    throw IllegalArgumentException("More than 25 choices for option $type")
+                choices.forEach { (internal, friendly) ->
+                    data.addChoice(friendly, internal)
+                }
+            }
+        }
         if (method.kotlinFunction != null) {
             // This is a kotlin function
             val kFunction =
                 method.kotlinFunction ?: throw IllegalArgumentException("This should never happen")
             kFunction.parameters.filter { it.findAnnotation<SlashCommandParameter>() != null }
                 .forEach { p ->
-                    val resolver = slashCommandResolvers[p.type.javaType]
+                    val type = p.type.javaType as Class<*>
+                    val resolver = getResolver(type)
                         ?: throw IllegalArgumentException("No resolver for option type ${p.name} (${p.type}) on ${method.declaringClass}#${method.name}")
                     val annotation =
                         p.findAnnotation<SlashCommandParameter>() ?: throw IllegalArgumentException(
@@ -196,6 +208,7 @@ class SlashCommandExecutor(
                         )
                     val data =
                         OptionData(resolver.optionType, annotation.name, annotation.description)
+                    addChoices(resolver, type, data)
                     // If the type is non-null this option should be required
                     data.isRequired = !p.type.isMarkedNullable
                     if ((p.type as? Class<*>)?.isPrimitive == true) {
@@ -207,11 +220,12 @@ class SlashCommandExecutor(
             // This is a java function
             method.parameters.filter { it.isAnnotationPresent(SlashCommandParameter::class.java) }
                 .forEach { p ->
-                    val resolver = slashCommandResolvers[p.type]
+                    val resolver = getResolver(p.type)
                         ?: throw IllegalArgumentException("No resolver for option type ${p.name} (${p.type}) on ${method.declaringClass}#${method.name}")
                     val annotation = p.getAnnotation(SlashCommandParameter::class.java)
                     val data =
                         OptionData(resolver.optionType, annotation.name, annotation.description)
+                    addChoices(resolver, p.type, data)
                     // If the nonnull annotation is present, set it as non-null
                     data.isRequired = !p.isAnnotationPresent(Nullable::class.java)
                     if (p.type.isPrimitive) {
@@ -233,9 +247,19 @@ class SlashCommandExecutor(
         append(event.name)
         if (event.subcommandGroup != null) {
             append(" ${event.subcommandGroup} ${event.subcommandName}")
-        } else if (event.subcommandGroup != null) {
+        } else if (event.subcommandName != null) {
             append(" ${event.subcommandName}")
         }
+    }
+
+    private fun getResolver(type: Class<*>): TypeResolver<*>? {
+        var curr: Class<*>? = type
+        var resolver: TypeResolver<*>?
+        do {
+            resolver = slashCommandResolvers[curr]
+            curr = curr?.superclass
+        } while (curr != null && resolver == null)
+        return resolver
     }
 
     /**
@@ -298,12 +322,13 @@ class SlashCommandExecutor(
                     val annotation = param.getAnnotation(SlashCommandParameter::class.java)
                     val map = event.getOption(annotation.name) ?: return@forEachIndexed
                     val paramType = param.type
-                    val resolver = slashCommandResolvers[paramType]
+                    val resolver = getResolver(paramType)
                         ?: throw TypeResolutionException("Unknown type resolver for type $paramType")
                     try {
-                        parameters[i] = resolver.resolver.invoke(map)
+                        parameters[i] = resolver.resolver.invoke(map, paramType)
                     } catch (e: TypeResolutionException) {
-                        event.reply(":no_entry: `${map.name}`: ${e.message ?: "An unknown error occurred"}")
+                        event.reply(":no_entry: `${map.name}`: ${e.message ?: "An unknown error occurred"}").setEphemeral(true).queue()
+                        return
                     }
                 }
                 try {

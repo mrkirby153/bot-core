@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.entities.TextChannel
 import net.dv8tion.jda.api.entities.VoiceChannel
 import net.dv8tion.jda.api.interactions.commands.OptionMapping
 import net.dv8tion.jda.api.interactions.commands.OptionType
+import java.util.Locale
 
 /**
  * Data class representing a type resolver for slash commands
@@ -15,10 +16,14 @@ data class TypeResolver<T>(
      * The option type to report to Discord for resolution
      */
     val optionType: OptionType,
+
+    val options: Map<String, String> = emptyMap(),
+
+    val optionResolver: ((Class<*>) -> Map<String, String>) = { options },
     /**
      * The actual resolver
      */
-    val resolver: (OptionMapping) -> T?
+    val resolver: (OptionMapping, Class<*>) -> T?
 )
 
 /**
@@ -43,69 +48,86 @@ private inline fun <reified T : GuildChannel> resolveChannel(
 /**
  * The type resolver for resolving [String]
  */
-val STRING_TYPE_RESOLVER = TypeResolver(OptionType.STRING) {
+val STRING_TYPE_RESOLVER = TypeResolver(OptionType.STRING) { it, _ ->
     return@TypeResolver it.asString
 }
 
 /**
  * The type resolver for resolving [Int]
  */
-val INT_TYPE_RESOLVER = TypeResolver(OptionType.INTEGER) {
+val INT_TYPE_RESOLVER = TypeResolver(OptionType.INTEGER) { it, _ ->
     return@TypeResolver it.asLong.toInt()
 }
 
 /**
  * The type resolver for resolving [Long]
  */
-val LONG_TYPE_RESOLVER = TypeResolver(OptionType.INTEGER) {
+val LONG_TYPE_RESOLVER = TypeResolver(OptionType.INTEGER) { it, _ ->
     return@TypeResolver it.asLong
 }
 
 /**
  * The type resolver for resolving [Boolean]
  */
-val BOOLEAN_TYPE_RESOLVER = TypeResolver(OptionType.BOOLEAN) {
+val BOOLEAN_TYPE_RESOLVER = TypeResolver(OptionType.BOOLEAN) { it, _ ->
     return@TypeResolver it.asBoolean
 }
 
 /**
  * The type resolver for resolving Users
  */
-val USER_TYPE_RESOLVER = TypeResolver(OptionType.USER) {
+val USER_TYPE_RESOLVER = TypeResolver(OptionType.USER) { it, _ ->
     return@TypeResolver it.asUser
 }
 
 /**
  * The type resolver for resolving [TextChannel]
  */
-val TEXT_CHANNEL_TYPE_RESOLVER = TypeResolver(OptionType.CHANNEL) {
+val TEXT_CHANNEL_TYPE_RESOLVER = TypeResolver(OptionType.CHANNEL) { it, _ ->
     return@TypeResolver resolveChannel<TextChannel>(it.asGuildChannel, "Text Channel")
 }
 
 /**
  * The type resolver for resolving [VoiceChannel]
  */
-val VOICE_CHANNEL_TYPE_RESOLVER = TypeResolver(OptionType.CHANNEL) {
+val VOICE_CHANNEL_TYPE_RESOLVER = TypeResolver(OptionType.CHANNEL) { it, _ ->
     return@TypeResolver resolveChannel<VoiceChannel>(it.asGuildChannel, "Voice Channel")
 }
 
 /**
  * The type resolver for resolving [Category]
  */
-val CATEGORY_TYPE_RESOLVER = TypeResolver(OptionType.MENTIONABLE) {
+val CATEGORY_TYPE_RESOLVER = TypeResolver(OptionType.MENTIONABLE) { it, _ ->
     return@TypeResolver resolveChannel<Category>(it.asGuildChannel, "Category")
 }
 
 /**
  * The type resolver for resolving roles
  */
-val ROLE_TYPE_RESOLVER = TypeResolver(OptionType.ROLE) {
+val ROLE_TYPE_RESOLVER = TypeResolver(OptionType.ROLE) { it, _ ->
     return@TypeResolver it.asRole
 }
 
 /**
  * The type resolver for resolving a generic mentionable
  */
-val MENTIONABLE_TYPE_RESOLVER = TypeResolver(OptionType.MENTIONABLE) {
+val MENTIONABLE_TYPE_RESOLVER = TypeResolver(OptionType.MENTIONABLE) { it, _ ->
     return@TypeResolver it.asMentionable
+}
+
+val ENUM_TYPE_RESOLVER = TypeResolver(OptionType.STRING, optionResolver = { type ->
+    (type as Class<Enum<*>>).enumConstants.associateBy({ it.name }, { enum ->
+        enum.name.split("_").joinToString(" ") { str ->
+            str.lowercase().replaceFirstChar {
+                if (it.isLowerCase()) it.titlecase(
+                    Locale.getDefault()
+                ) else it.toString()
+            }
+        }
+    })
+}) { optionType, type ->
+    val enumClazz = type as Class<Enum<*>>
+    val names = enumClazz.enumConstants.joinToString(", ") { it.name }
+    enumClazz.enumConstants.firstOrNull { it.name.equals(optionType.asString, true) }
+        ?: throw TypeResolutionException("Parameter must be one of $names")
 }
