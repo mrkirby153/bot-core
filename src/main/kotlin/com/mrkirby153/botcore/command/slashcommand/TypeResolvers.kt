@@ -29,7 +29,7 @@ data class TypeResolver<T>(
 /**
  * An exception thrown when an error occurs during type resolution
  */
-class TypeResolutionException(e: String) : Exception(e)
+class TypeResolutionException(e: String) : RuntimeException(e)
 
 /**
  * Resolves a channel from the provided [channel]. Specify [friendlyType] to tell the user what the
