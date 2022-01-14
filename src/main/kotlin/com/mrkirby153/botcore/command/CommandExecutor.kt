@@ -206,7 +206,7 @@ open class CommandExecutor(private val prefix: String,
             }
             if (missingPerms.isNotEmpty()) {
                 if (message.guild.selfMember.hasPermission(message.textChannel,
-                                Permission.MESSAGE_WRITE))
+                                Permission.MESSAGE_SEND))
                     message.channel.sendMessage(
                             ":no_entry: I am missing the following permissions: `${missingPerms.joinToString(
                                     ", ") { it.getName() }}").queue()
