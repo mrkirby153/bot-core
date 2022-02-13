@@ -9,8 +9,12 @@ import net.dv8tion.jda.api.entities.Role
 import net.dv8tion.jda.api.entities.TextChannel
 import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.entities.VoiceChannel
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent
+import net.dv8tion.jda.api.events.interaction.command.GenericContextInteractionEvent
+import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
+import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
+import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData
@@ -40,6 +44,9 @@ class SlashCommandExecutor(
      * The root node in the slash command tree
      */
     private val rootNode = SlashCommandNode("__ROOT__", path = "")
+
+    private val messageContextCommands = mutableListOf<ContextCommand>()
+    private val userContextCommands = mutableListOf<ContextCommand>()
 
     /**
      * A list of custom slash command resolvers
@@ -79,15 +86,57 @@ class SlashCommandExecutor(
         val providedClass = clazz ?: instance.javaClass
         providedClass.declaredMethods.filter { it.isAnnotationPresent(SlashCommand::class.java) }
             .forEach { method ->
-                val annotation = method.getAnnotation(SlashCommand::class.java)
-                val node = resolveNode(annotation.name, true)!!
-                node.options = discoverOptions(method)
-                node.classInstance = instance
-                node.description = annotation.description
-                node.clearance = annotation.clearance
-                node.availability = annotation.availability
-                node.method = method
+                if (method.getAnnotation(SlashCommand::class.java) != null) {
+                    registerSlashCommand(instance, method)
+                } else if (method.getAnnotation(UserCommand::class.java) != null) {
+                    registerContextCommand(
+                        instance,
+                        method,
+                        userContextCommands,
+                        UserCommand::class.java
+                    )
+                } else if (method.getAnnotation(MessageCommand::class.java) != null) {
+                    registerContextCommand(
+                        instance,
+                        method,
+                        messageContextCommands,
+                        MessageCommand::class.java
+                    )
+                }
             }
+    }
+
+    private fun registerSlashCommand(instance: Any, method: Method) {
+        val annotation = method.getAnnotation(SlashCommand::class.java)
+        val node = resolveNode(annotation.name, true)!!
+        node.options = discoverOptions(method)
+        node.classInstance = instance
+        node.description = annotation.description
+        node.clearance = annotation.clearance
+        node.availability = annotation.availability
+        node.method = method
+    }
+
+    private fun registerContextCommand(
+        instance: Any,
+        method: Method,
+        list: MutableList<ContextCommand>,
+        clazz: Class<out Annotation>
+    ) {
+        val cmd = when (val annotation = method.getAnnotation(clazz)) {
+            is UserCommand -> {
+                if (list.size > Commands.MAX_USER_COMMANDS)
+                    throw IllegalArgumentException("Can't register more than ${Commands.MAX_USER_COMMANDS} user context commands")
+                ContextCommand(annotation.name, method, instance, annotation.clearance)
+            }
+            is MessageCommand -> {
+                if (list.size > Commands.MAX_MESSAGE_COMMANDS)
+                    throw IllegalArgumentException("Can't register more than ${Commands.MAX_MESSAGE_COMMANDS} message context commands")
+                ContextCommand(annotation.name, method, instance, annotation.clearance)
+            }
+            else -> throw IllegalArgumentException("Unrecognized type $annotation")
+        }
+        list.add(cmd)
     }
 
     /**
@@ -113,7 +162,7 @@ class SlashCommandExecutor(
     fun flattenSlashCommands(): List<CommandData> {
         val commands = mutableListOf<CommandData>()
         rootNode.children.forEach { node ->
-            val data = CommandData(node.name, node.description)
+            val data = Commands.slash(node.name, node.description)
             val nodeChildren = node.children
             var hasGroupChildren = false
             var hasSubCommand = false
@@ -156,6 +205,9 @@ class SlashCommandExecutor(
             }
             commands.add(data)
         }
+
+        commands.addAll(userContextCommands.map { Commands.user(it.name) })
+        commands.addAll(messageContextCommands.map { Commands.message(it.name) })
         return commands
     }
 
@@ -184,9 +236,9 @@ class SlashCommandExecutor(
         val options = mutableListOf<OptionData>()
         method.trySetAccessible()
         fun addChoices(resolver: TypeResolver<*>, type: Class<*>, data: OptionData) {
-            if(resolver.optionType.canSupportChoices()) {
+            if (resolver.optionType.canSupportChoices()) {
                 val choices = resolver.optionResolver.invoke(type)
-                if(choices.size > 25)
+                if (choices.size > 25)
                     throw IllegalArgumentException("More than 25 choices for option $type")
                 choices.forEach { (internal, friendly) ->
                     data.addChoice(friendly, internal)
@@ -240,10 +292,11 @@ class SlashCommandExecutor(
     /**
      * Returns true if this slash command executor can execute the command from the provided [event]
      */
-    fun canExecute(event: SlashCommandEvent) = resolveNode(getCommandName(event), false) != null
+    fun canExecute(event: SlashCommandInteractionEvent) =
+        resolveNode(getCommandName(event), false) != null
 
 
-    private fun getCommandName(event: SlashCommandEvent) = buildString {
+    private fun getCommandName(event: SlashCommandInteractionEvent) = buildString {
         append(event.name)
         if (event.subcommandGroup != null) {
             append(" ${event.subcommandGroup} ${event.subcommandName}")
@@ -266,7 +319,7 @@ class SlashCommandExecutor(
      * Executes the provided [event]'s slash command if this executor is able (A command exists in
      * its tree). Returns true if this executor was able to execute the slash command
      */
-    fun executeSlashCommandIfAble(event: SlashCommandEvent): Boolean {
+    fun executeSlashCommandIfAble(event: SlashCommandInteractionEvent): Boolean {
         return if (canExecute(event)) {
             executeSlashCommand(event)
             true
@@ -275,10 +328,45 @@ class SlashCommandExecutor(
         }
     }
 
+    fun executeContextInteraction(event: GenericContextInteractionEvent<*>): Boolean {
+        val toConsider = when (event) {
+            is MessageContextInteractionEvent -> {
+                messageContextCommands
+            }
+            is UserContextInteractionEvent -> {
+                userContextCommands
+            }
+            else -> {
+                // Ignore
+                emptyList()
+            }
+        }
+        val target = toConsider.firstOrNull { it.name == event.name } ?: return false
+        try {
+            val clearance = if (event.isFromGuild) clearanceResolver.resolve(event.member!!) else 0
+            if (clearance < target.clearance) {
+                event.reply(":lock: You do not have permission to use this command")
+                    .setEphemeral(true).queue()
+            } else {
+                target.method.invoke(target.instance, event)
+            }
+        } catch (e: InvocationTargetException) {
+            val cause = e.cause ?: e
+            if (cause is CommandException) {
+                event.reply(":no_entry: ${cause.message ?: "An unknown error occurred"}")
+                    .setEphemeral(true).queue()
+            } else {
+                event.reply(":no_entry: Command Failed: ${cause.message ?: "An unknown error occurred"}")
+                    .setEphemeral(true).queue()
+            }
+        }
+        return true
+    }
+
     /**
      * Executes the slash command invoked by the provided [event]
      */
-    fun executeSlashCommand(event: SlashCommandEvent) {
+    fun executeSlashCommand(event: SlashCommandInteractionEvent) {
         try {
             val command = getCommandName(event)
             val node = resolveNode(command, false)
@@ -327,7 +415,8 @@ class SlashCommandExecutor(
                     try {
                         parameters[i] = resolver.resolver.invoke(map, paramType)
                     } catch (e: TypeResolutionException) {
-                        event.reply(":no_entry: `${map.name}`: ${e.message ?: "An unknown error occurred"}").setEphemeral(true).queue()
+                        event.reply(":no_entry: `${map.name}`: ${e.message ?: "An unknown error occurred"}")
+                            .setEphemeral(true).queue()
                         return
                     }
                 }

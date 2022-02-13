@@ -1,10 +1,12 @@
 package com.mrkirby153.botcore.command.slashcommand
 
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent
+import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
+import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent
 
 /**
  * Annotation indicating that this method is a slash command. Slash commands must have the first
- * parameter of the method be a [SlashCommandEvent], with parameters following, annotated with
+ * parameter of the method be a [SlashCommandInteractionEvent], with parameters following, annotated with
  * [SlashCommandParameter]
  */
 @Target(AnnotationTarget.FUNCTION)
@@ -26,6 +28,24 @@ annotation class SlashCommand(
      * Where this command can be used
      */
     val availability: Array<SlashCommandAvailability> = []
+)
+
+/**
+ * Annotation indicating that this method is a user context command. User commands must have
+ * the first parameter of the method be a [UserContextInteractionEvent]
+ */
+annotation class UserCommand(
+    val name: String,
+    val clearance: Int = 0
+)
+
+/**
+ * Annotation indicating that this method is a message context command. Message commands must
+ * have the first parameter of the method be a [MessageContextInteractionEvent]
+ */
+annotation class MessageCommand(
+    val name: String,
+    val clearance: Int = 0
 )
 
 enum class SlashCommandAvailability {

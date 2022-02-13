@@ -3,7 +3,11 @@ package com.mrkirby153.botcore.command.slashcommand
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import java.lang.reflect.Method
 
-class SlashCommandNode(val name: String, var description: String = "No description provided", val path: String) {
+class SlashCommandNode(
+    val name: String,
+    var description: String = "No description provided",
+    val path: String
+) {
 
     val children = mutableListOf<SlashCommandNode>()
     var clearance = 0
@@ -26,3 +30,10 @@ class SlashCommandNode(val name: String, var description: String = "No descripti
         return null
     }
 }
+
+data class ContextCommand(
+    val name: String,
+    val method: Method,
+    val instance: Any,
+    val clearance: Int = 0
+)
