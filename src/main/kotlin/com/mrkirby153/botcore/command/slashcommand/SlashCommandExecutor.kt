@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.entities.Role
 import net.dv8tion.jda.api.entities.TextChannel
 import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.entities.VoiceChannel
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.GenericContextInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
@@ -56,6 +57,8 @@ class SlashCommandExecutor(
     private var defaultAvailability: Array<out SlashCommandAvailability> =
         arrayOf(SlashCommandAvailability.DM, SlashCommandAvailability.GUILD)
 
+    private val autocompleteResolverCache = mutableMapOf<Class<*>, AutocompleteHandler<*>>()
+
 
     init {
         // Add default slash command resolvers
@@ -84,18 +87,22 @@ class SlashCommandExecutor(
     @JvmOverloads
     fun discoverAndRegisterSlashCommands(instance: Any, clazz: Class<*>? = null) {
         val providedClass = clazz ?: instance.javaClass
-        providedClass.declaredMethods.filter { it.isAnnotationPresent(SlashCommand::class.java) }
+        providedClass.declaredMethods.filter {
+            it.isAnnotationPresent(SlashCommand::class.java) || it.isAnnotationPresent(
+                UserCommand::class.java
+            ) || it.isAnnotationPresent(MessageCommand::class.java)
+        }
             .forEach { method ->
-                if (method.getAnnotation(SlashCommand::class.java) != null) {
+                if (method.isAnnotationPresent(SlashCommand::class.java)) {
                     registerSlashCommand(instance, method)
-                } else if (method.getAnnotation(UserCommand::class.java) != null) {
+                } else if (method.isAnnotationPresent(UserCommand::class.java)) {
                     registerContextCommand(
                         instance,
                         method,
                         userContextCommands,
                         UserCommand::class.java
                     )
-                } else if (method.getAnnotation(MessageCommand::class.java) != null) {
+                } else if (method.isAnnotationPresent(MessageCommand::class.java)) {
                     registerContextCommand(
                         instance,
                         method,
@@ -260,6 +267,7 @@ class SlashCommandExecutor(
                         )
                     val data =
                         OptionData(resolver.optionType, annotation.name, annotation.description)
+                    data.isAutoComplete = AutocompleteHandler::class.java.isAssignableFrom(type)
                     addChoices(resolver, type, data)
                     // If the type is non-null this option should be required
                     data.isRequired = !p.type.isMarkedNullable
@@ -277,6 +285,7 @@ class SlashCommandExecutor(
                     val annotation = p.getAnnotation(SlashCommandParameter::class.java)
                     val data =
                         OptionData(resolver.optionType, annotation.name, annotation.description)
+                    data.isAutoComplete = AutocompleteHandler::class.java.isAssignableFrom(p.type)
                     addChoices(resolver, p.type, data)
                     // If the nonnull annotation is present, set it as non-null
                     data.isRequired = !p.isAnnotationPresent(Nullable::class.java)
@@ -305,13 +314,48 @@ class SlashCommandExecutor(
         }
     }
 
+    private fun getCommandName(event: CommandAutoCompleteInteractionEvent) = buildString {
+        append(event.name)
+        if (event.subcommandGroup != null) {
+            append("${event.subcommandGroup} ${event.subcommandName}")
+        } else if (event.subcommandName != null) {
+            append(" ${event.subcommandName}")
+        }
+    }
+
+    private fun getAutoCompleteHandlerInstance(type: Class<*>): AutocompleteHandler<*> {
+        if (!AutocompleteHandler::class.java.isAssignableFrom(type))
+            throw IllegalArgumentException("$type is not an autocomplete handler")
+        return autocompleteResolverCache.computeIfAbsent(
+            type
+        ) { it.getConstructor().newInstance() as AutocompleteHandler<*> }
+    }
+
     private fun getResolver(type: Class<*>): TypeResolver<*>? {
-        var curr: Class<*>? = type
+        var curr: Class<*>? = if (AutocompleteHandler::class.java.isAssignableFrom(type)) {
+            getAutoCompleteHandlerInstance(type).clazz
+        } else {
+            type
+        }
         var resolver: TypeResolver<*>?
         do {
             resolver = slashCommandResolvers[curr]
             curr = curr?.superclass
         } while (curr != null && resolver == null)
+
+        // Hijack and inject a custom resolver
+        if (AutocompleteHandler::class.java.isAssignableFrom(type) && resolver != null) {
+            return TypeResolver(
+                resolver.optionType,
+                resolver.options,
+                resolver.optionResolver
+            ) { map, v ->
+                return@TypeResolver (type.getConstructor()
+                    .newInstance() as AutocompleteHandler<*>).apply {
+                    this.rawValue = resolver.resolver.invoke(map, v)
+                }
+            }
+        }
         return resolver
     }
 
@@ -442,5 +486,23 @@ class SlashCommandExecutor(
             event.reply(":no_entry: Something went wrong executing your command: ${e.message}")
                 .setEphemeral(true).queue()
         }
+    }
+
+    fun handleAutocomplete(event: CommandAutoCompleteInteractionEvent) {
+        val command = getCommandName(event)
+        val node = resolveNode(command, false) ?: return
+        val focusedParam = event.focusedOption.name
+
+        val targetMethod =
+            node.method?.parameters?.firstOrNull { it.getAnnotation(SlashCommandParameter::class.java)?.name == focusedParam }
+                ?: return
+
+        val handler = targetMethod.type
+        if (!AutocompleteHandler::class.java.isAssignableFrom(handler)) {
+            return
+        }
+        val instance = getAutoCompleteHandlerInstance(handler)
+        val choices = instance.choices(event)
+        event.replyChoices(choices).queue()
     }
 }
