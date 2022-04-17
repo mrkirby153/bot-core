@@ -4,7 +4,6 @@ import com.mrkirby153.botcore.command.ClearanceResolver;
 import com.mrkirby153.botcore.command.CommandExecutor;
 import com.mrkirby153.botcore.command.CommandExecutor.MentionMode;
 import com.mrkirby153.botcore.command.args.CommandContextResolver;
-import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -13,7 +12,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -44,16 +42,6 @@ public class CommandAutoConfiguration {
         this.mentionMode = mentionMode;
     }
 
-    @Bean(name = "commandExecutor")
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(value = "bot.shard", havingValue = "false")
-    public CommandExecutor jdaCommandExecutor(JDA jda,
-        ClearanceResolver clearanceResolver,
-        @Qualifier("contextResolvers") Map<String, CommandContextResolver> resolvers) {
-        CommandExecutor ex = new CommandExecutor(prefix, mentionMode, jda, null);
-        return getCommandExecutor(clearanceResolver, resolvers, ex);
-    }
-
     @NotNull
     private CommandExecutor getCommandExecutor(
         ClearanceResolver clearanceResolver,
@@ -71,7 +59,6 @@ public class CommandAutoConfiguration {
 
     @Bean(name = "commandExecutor")
     @ConditionalOnMissingBean
-    @ConditionalOnProperty(value = "bot.shard", havingValue = "true")
     public CommandExecutor shardManagerCommandExecutor(ShardManager shardManager,
         @Qualifier("clearanceResolver") ClearanceResolver clearanceResolver,
         @Qualifier("contextResolvers") Map<String, CommandContextResolver> resolvers) {
