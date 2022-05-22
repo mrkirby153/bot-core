@@ -31,23 +31,9 @@ class ModalManager(
         cleanupThreadPool.scheduleAtFixedRate({ garbageCollect() }, 0, gcPeriod, gcUnits)
     }
 
-    companion object {
-        @JvmStatic
-        var instance: ModalManager? = null
-
-        fun build(
-            timeout: Long = 5,
-            timeUnit: TimeUnit = TimeUnit.MINUTES,
-            builder: ModalBuilder.() -> Unit
-        ): Modal {
-            if (instance == null)
-                instance = ModalManager()
-            return instance!!.build(timeout, timeUnit, builder)
-        }
-    }
-
     private val registeredModals = CopyOnWriteArrayList<RegisteredModal>()
 
+    @JvmOverloads
     fun register(modal: ModalBuilder, timeout: Long = 5, timeUnit: TimeUnit = TimeUnit.MINUTES) {
         val timeoutMs =
             if (timeout == -1L) timeout else TimeUnit.MILLISECONDS.convert(timeout, timeUnit)
