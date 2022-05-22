@@ -5,6 +5,7 @@ import com.mrkirby153.botcore.command.CommandException
 import net.dv8tion.jda.api.entities.Category
 import net.dv8tion.jda.api.entities.IMentionable
 import net.dv8tion.jda.api.entities.Member
+import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.Role
 import net.dv8tion.jda.api.entities.TextChannel
 import net.dv8tion.jda.api.entities.User
@@ -77,6 +78,7 @@ class SlashCommandExecutor(
         slashCommandResolvers[Role::class.java] = ROLE_TYPE_RESOLVER
         slashCommandResolvers[IMentionable::class.java] = MENTIONABLE_TYPE_RESOLVER
         slashCommandResolvers[Enum::class.java] = ENUM_TYPE_RESOLVER
+        slashCommandResolvers[Message.Attachment::class.java] = FILE_TYPE_RESOLVER
     }
 
     /**

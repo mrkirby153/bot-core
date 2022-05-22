@@ -131,3 +131,7 @@ val ENUM_TYPE_RESOLVER = TypeResolver(OptionType.STRING, optionResolver = { type
     enumClazz.enumConstants.firstOrNull { it.name.equals(optionType.asString, true) }
         ?: throw TypeResolutionException("Parameter must be one of $names")
 }
+
+val FILE_TYPE_RESOLVER = TypeResolver(OptionType.ATTACHMENT) { it, _ ->
+    return@TypeResolver it.asAttachment
+}

@@ -22,7 +22,7 @@ dependencies {
     implementation 'org.json:json:20220320'
     implementation 'org.jetbrains.kotlin:kotlin-reflect:1.6.20'
     testImplementation 'org.jetbrains.kotlin:kotlin-test:1.6.20'
-    compileOnly 'net.dv8tion:JDA:5.0.0-alpha.9'
+    compileOnly 'net.dv8tion:JDA:5.0.0-alpha.11'
 
     // Spring dependencies for autoconfiguration in a spring project
     compileOnly 'org.springframework:spring-context:5.3.18'
@@ -31,7 +31,7 @@ dependencies {
 
 group = 'com.mrkirby153'
 version = '4.0-SNAPSHOT'
-sourceCompatibility = '1.8'
+sourceCompatibility = "1.9"
 
 java {
     withSourcesJar()
@@ -87,3 +87,4 @@ compileTestKotlin {
         jvmTarget = "11"
     }
 }
+targetCompatibility = JavaVersion.VERSION_1_9
