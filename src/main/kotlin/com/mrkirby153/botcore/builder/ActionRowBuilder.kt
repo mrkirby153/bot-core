@@ -2,42 +2,76 @@ package com.mrkirby153.botcore.builder
 
 import net.dv8tion.jda.api.entities.Emoji
 import net.dv8tion.jda.api.interactions.components.ActionRow
+import net.dv8tion.jda.api.interactions.components.ItemComponent
 import net.dv8tion.jda.api.interactions.components.buttons.Button
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle
 import net.dv8tion.jda.api.interactions.components.selections.SelectMenu
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption
+import net.dv8tion.jda.api.interactions.components.text.TextInput
+import net.dv8tion.jda.api.interactions.components.text.TextInputStyle
 import java.util.UUID
 
 
 @DslMarker
 annotation class ActionRowDsl
 
-@ActionRowDsl
-class ActionRowBuilder : Builder<ActionRow> {
+enum class Type {
+    MESSAGE,
+    MODAL
+}
 
-    val buttons = mutableListOf<ButtonBuilder>()
-    val selects = mutableListOf<SelectMenuBuilder>()
+@ActionRowDsl
+class ActionRowBuilder(
+    val type: Type = Type.MESSAGE
+) : Builder<ActionRow> {
+
+    val components =
+        mutableMapOf<Class<out ItemComponent>, MutableList<Builder<out ItemComponent>>>()
 
     inline fun button(id: String? = null, builder: ButtonBuilder.() -> Unit): String {
-        if (selects.size > 0)
-            throw IllegalArgumentException("Can't mix buttons and selects")
+        if(type != Type.MESSAGE)
+            throw IllegalArgumentException("Can only use buttons in messages")
+        validateComponentType(Button::class.java)
         val buttonId = id ?: UUID.randomUUID().toString()
-        buttons.add(ButtonBuilder(buttonId).apply(builder))
+        components.computeIfAbsent(Button::class.java) {
+            mutableListOf()
+        }.add(ButtonBuilder(buttonId).apply(builder))
         return buttonId
     }
 
     inline fun select(id: String? = null, builder: SelectMenuBuilder.() -> Unit): String {
-        if (buttons.size > 0)
-            throw IllegalArgumentException("Can't mix buttons and selects")
+        if(type != Type.MESSAGE)
+            throw IllegalArgumentException("Can only use selects in messages")
+        validateComponentType(SelectMenu::class.java)
         val selectId = id ?: UUID.randomUUID().toString()
-        selects.add(SelectMenuBuilder(selectId).apply(builder))
+        components.computeIfAbsent(SelectMenu::class.java) {
+            mutableListOf()
+        }.add(SelectMenuBuilder(selectId).apply(builder))
         return selectId
     }
 
-    override fun build(): ActionRow = ActionRow.of(
-        *buttons.map { it.build() }.toTypedArray(),
-        *selects.map { it.build() }.toTypedArray()
-    )
+    inline fun textInput(id: String? = null, builder: TextInputBuilder.() -> Unit): String {
+        if (type != Type.MODAL)
+            throw IllegalArgumentException("Can only use text input components in modals")
+        validateComponentType(TextInput::class.java)
+        val textId = id ?: UUID.randomUUID().toString()
+        components.computeIfAbsent(TextInput::class.java) {
+            mutableListOf()
+        }.add(TextInputBuilder(textId).apply(builder))
+        return textId
+    }
+
+    override fun build(): ActionRow =
+        ActionRow.of(components.flatMap { it.value }.map { it.build() })
+
+    fun validateComponentType(type: Class<out ItemComponent>) {
+        if (components.isEmpty())
+            return
+        // Enforce a single component type in the action row
+        if (type in components.keys)
+            return
+        throw IllegalArgumentException("Action rows can only consist of a single type of component")
+    }
 }
 
 
@@ -63,7 +97,7 @@ class SelectMenuBuilder(
     var options = mutableListOf<SelectOptionBuilder>()
     var min = 1
     var max = 1
-    var placeholder = ""
+    var placeholder: String? = null
     var enabled = true
 
     inline fun option(id: String, builder: SelectOptionBuilder.() -> Unit) {
@@ -80,6 +114,7 @@ class SelectMenuBuilder(
     }
 }
 
+@ActionRowDsl
 class SelectOptionBuilder(
     val id: String
 ) : Builder<SelectOption> {
@@ -89,4 +124,23 @@ class SelectOptionBuilder(
     var icon: Emoji? = null
     override fun build(): SelectOption =
         SelectOption.of(id, value).withDescription(description).withDefault(default).withEmoji(icon)
+}
+
+@ActionRowDsl
+class TextInputBuilder(
+    val id: String
+) : Builder<TextInput> {
+
+    var style = TextInputStyle.SHORT
+    var name = ""
+    var placeholder: String? = null
+    var value: String? = null
+    var min = 0
+    var max = 4000
+    var required = false
+
+    override fun build(): TextInput {
+        return TextInput.create(id, name, style).setPlaceholder(placeholder).setValue(value)
+            .setRequiredRange(min, max).setRequired(required).build()
+    }
 }
