@@ -12,7 +12,7 @@ abstract class ArgBuilder<T : Any>(val type: OptionType) {
     abstract fun build(arguments: Arguments): Argument<T>
 }
 
-abstract class NullableArgBuilder<T>(val type: OptionType) {
+abstract class NullableArgBuilder<T : Any>(val type: OptionType) {
     lateinit var displayName: String
     lateinit var description: String
 

@@ -12,19 +12,23 @@ class StringConverter : ArgumentConverter<String> {
     override fun convert(input: OptionMapping): String = input.asString
 }
 
-class StringArgument : ArgBuilder<String>(OptionType.STRING) {
+class StringArgument : ArgBuilder<String>(OptionType.STRING), IsAutocompleteEligible {
 
+    override var autocompleteFunction: AutoCompleteCallback? = null
     override fun build(arguments: Arguments): Argument<String> =
-        Argument(type, displayName, description, StringConverter())
+        Argument(type, displayName, description, StringConverter(), autocompleteFunction)
+
 }
 
-class OptionalStringArgument : NullableArgBuilder<String>(OptionType.STRING) {
+class OptionalStringArgument : NullableArgBuilder<String>(OptionType.STRING),
+    IsAutocompleteEligible {
+    override var autocompleteFunction: AutoCompleteCallback? = null
     override fun build(arguments: Arguments): NullableArgument<String> =
-        NullableArgument(type, displayName, description, StringConverter())
+        NullableArgument(type, displayName, description, StringConverter(), autocompleteFunction)
 }
 
 
-fun Arguments.string(body: ArgBuilder<String>.() -> Unit): Argument<String> {
+fun Arguments.string(body: StringArgument.() -> Unit): Argument<String> {
     val builder = StringArgument()
     body(builder)
     val built = builder.build(this)
@@ -32,7 +36,7 @@ fun Arguments.string(body: ArgBuilder<String>.() -> Unit): Argument<String> {
     return built
 }
 
-fun Arguments.optionalString(body: NullableArgBuilder<String>.() -> Unit): NullableArgument<String> {
+fun Arguments.optionalString(body: OptionalStringArgument.() -> Unit): NullableArgument<String> {
     val builder = OptionalStringArgument()
     body(builder)
     val built = builder.build(this)

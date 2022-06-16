@@ -1,5 +1,8 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl
 
+import com.mrkirby153.botcore.command.slashcommand.dsl.types.ArgBuilder
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
+import net.dv8tion.jda.api.interactions.commands.Command
 import net.dv8tion.jda.api.interactions.commands.OptionMapping
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import kotlin.reflect.KProperty
@@ -9,6 +12,7 @@ data class Argument<T : Any>(
     val displayName: String,
     val description: String,
     val converter: ArgumentConverter<T>,
+    val autocompleteHandler: ((CommandAutoCompleteInteractionEvent) -> List<Command.Choice>)? = null
 ) {
 
     private lateinit var parsed: T
@@ -22,11 +26,12 @@ data class Argument<T : Any>(
     }
 }
 
-data class NullableArgument<T>(
+data class NullableArgument<T: Any>(
     val type: OptionType,
     val displayName: String,
     val description: String,
-    val converter: ArgumentConverter<T>
+    val converter: ArgumentConverter<T>,
+    val autocompleteHandler: ((CommandAutoCompleteInteractionEvent) -> List<Command.Choice>)? = null
 ) {
     private var parsed: T? = null
 

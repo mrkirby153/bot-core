@@ -1,6 +1,7 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl
 
 import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.interactions.commands.Command
@@ -28,6 +29,19 @@ class DslSlashCommandExecutor : ListenerAdapter() {
         }
     }
 
+    private fun getSlashCommand(event: CommandAutoCompleteInteractionEvent): AbstractSlashCommand<*>? {
+        val command = registeredCommands[event.name] ?: return null
+        val group = event.subcommandGroup
+        val subCommandName = event.subcommandName
+        return if (group != null) {
+            command.getSubCommand(group, subCommandName!!)
+        } else if (subCommandName != null) {
+            command.getSubCommand(subCommandName)
+        } else {
+            command
+        }
+    }
+
     private fun populateArgs(data: SubcommandData, args: Arguments?) {
         if (args != null) {
             data.addOptions(
@@ -36,7 +50,7 @@ class DslSlashCommandExecutor : ListenerAdapter() {
                         arg.type,
                         arg.displayName,
                         arg.description,
-                        true
+                        true, arg.autocompleteHandler != null
                     )
                 })
             data.addOptions(
@@ -45,7 +59,7 @@ class DslSlashCommandExecutor : ListenerAdapter() {
                         arg.type,
                         arg.displayName,
                         arg.description,
-                        false
+                        false, arg.autocompleteHandler != null
                     )
                 })
         }
@@ -83,7 +97,7 @@ class DslSlashCommandExecutor : ListenerAdapter() {
                         arg.type,
                         arg.displayName,
                         arg.description,
-                        true
+                        true, arg.autocompleteHandler != null
                     )
                 })
             commandData.addOptions(
@@ -92,7 +106,7 @@ class DslSlashCommandExecutor : ListenerAdapter() {
                         arg.type,
                         arg.displayName,
                         arg.description,
-                        false
+                        false, arg.autocompleteHandler != null
                     )
                 })
         }
@@ -115,6 +129,12 @@ class DslSlashCommandExecutor : ListenerAdapter() {
         cmd.execute(event)
     }
 
+    fun handleAutocomplete(event: CommandAutoCompleteInteractionEvent) {
+        val cmd = getSlashCommand(event) ?: return
+        val options = cmd.handleAutocomplete(event)
+        event.replyChoices(options).queue()
+    }
+
     fun register(vararg commands: SlashCommand<*>) {
         commands.forEach { command ->
             registeredCommands[command.name] = command
@@ -124,5 +144,10 @@ class DslSlashCommandExecutor : ListenerAdapter() {
     override fun onSlashCommandInteraction(event: SlashCommandInteractionEvent) {
         if (getSlashCommand(event) != null)
             execute(event)
+    }
+
+    override fun onCommandAutoCompleteInteraction(event: CommandAutoCompleteInteractionEvent) {
+        if (getSlashCommand(event) != null)
+            handleAutocomplete(event)
     }
 }
