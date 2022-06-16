@@ -8,3 +8,7 @@ fun <T : Arguments> slashCommand(arguments: () -> T, body: SlashCommand<T>.() ->
     body(command)
     return command
 }
+
+fun slashCommand(body: SlashCommand<Arguments>.() -> Unit): SlashCommand<Arguments> {
+    return slashCommand(::Arguments, body)
+}
