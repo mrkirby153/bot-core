@@ -10,5 +10,9 @@ open class Arguments {
 
     fun get() = arguments.toList()
 
+    fun get(key: String) = arguments.first { it.displayName == key }
+
     fun getNullable() = nullableArguments.toList()
+
+    fun getNullable(key: String) = nullableArguments.first { it.displayName == key }
 }

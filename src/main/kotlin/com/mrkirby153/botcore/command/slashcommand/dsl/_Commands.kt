@@ -17,12 +17,12 @@ fun slashCommand(body: SlashCommand<Arguments>.() -> Unit): SlashCommand<Argumen
 }
 
 fun SlashCommand<*>.group(name: String, body: Group.() -> Unit) {
-    val group = Group()
+    val group = Group(name)
     body(group)
     if (this.groups[name] != null) {
         throw IllegalArgumentException("Duplicate group $name")
     }
-    this.groups[name] = group.commands
+    this.groups[name] = group
 }
 
 fun <T : Arguments> Group.slashCommand(arguments: () -> T, body: SubCommand<T>.() -> Unit) {
