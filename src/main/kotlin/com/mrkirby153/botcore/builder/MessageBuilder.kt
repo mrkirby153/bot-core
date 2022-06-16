@@ -56,7 +56,7 @@ class MessageBuilder : Builder<Message> {
     }
 
     inline fun text(safe: Boolean = true, builder: MessageContentBuilder.() -> Unit) {
-        this.content = MessageContentBuilder(safe).apply(builder).toString()
+        this.content = MessageContentBuilder(safe).apply(builder).build()
     }
 
     inline fun embed(builder: EmbedBuilder.() -> Unit) {
