@@ -22,7 +22,7 @@ dependencies {
     implementation 'org.json:json:20220320'
     implementation 'org.jetbrains.kotlin:kotlin-reflect:1.6.20'
     testImplementation 'org.jetbrains.kotlin:kotlin-test:1.6.20'
-    implementation 'net.dv8tion:JDA:5.0.0-alpha.12'
+    compileOnly 'net.dv8tion:JDA:5.0.0-alpha.12'
 
     // Spring dependencies for autoconfiguration in a spring project
     compileOnly 'org.springframework:spring-context:5.3.18'
