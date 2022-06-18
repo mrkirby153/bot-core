@@ -3,12 +3,14 @@ package com.mrkirby153.botcore.command.slashcommand.dsl
 import com.mrkirby153.botcore.builder.MessageBuilder
 import com.mrkirby153.botcore.command.args.ArgumentParseException
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
+import net.dv8tion.jda.api.interactions.commands.CommandInteraction
+import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction
 
 class Context<A : Arguments>(
     val command: AbstractSlashCommand<A>,
     private val event: SlashCommandInteractionEvent
-) {
+) : SlashCommandInteraction by event {
 
     lateinit var args: A
     fun load() {
