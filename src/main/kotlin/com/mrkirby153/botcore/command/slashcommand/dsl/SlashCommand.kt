@@ -1,5 +1,6 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl
 
+import com.mrkirby153.botcore.command.slashcommand.dsl.types.AutocompleteEligible
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.Command
@@ -30,10 +31,10 @@ open class AbstractSlashCommand<A : Arguments>(
             return emptyList()
         }
         if (nullable != null) {
-            return nullable.autocompleteHandler?.invoke(event)
+            return (nullable.builder as AutocompleteEligible).autocompleteFunction?.invoke(event)
                 ?: listOf(Command.Choice("<<NO AUTOCOMPLETE HANDLER>>", -1))
         }
-        return nonNullable?.autocompleteHandler?.invoke(event)
+        return (nonNullable?.builder as? AutocompleteEligible)?.autocompleteFunction?.invoke(event)
             ?: listOf(Command.Choice("<<NO AUTOCOMPLETE HANDLER>>", -1))
     }
 }

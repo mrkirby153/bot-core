@@ -1,5 +1,6 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl
 
+import com.mrkirby153.botcore.command.slashcommand.dsl.types.AutocompleteEligible
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
@@ -50,7 +51,7 @@ class DslSlashCommandExecutor : ListenerAdapter() {
                         arg.type,
                         arg.displayName,
                         arg.description,
-                        true, arg.autocompleteHandler != null
+                        true, arg.builder is AutocompleteEligible && arg.builder.autocompleteFunction != null
                     )
                 })
             data.addOptions(
@@ -59,7 +60,7 @@ class DslSlashCommandExecutor : ListenerAdapter() {
                         arg.type,
                         arg.displayName,
                         arg.description,
-                        false, arg.autocompleteHandler != null
+                        false, arg.builder is AutocompleteEligible && arg.builder.autocompleteFunction != null
                     )
                 })
         }
@@ -97,7 +98,7 @@ class DslSlashCommandExecutor : ListenerAdapter() {
                         arg.type,
                         arg.displayName,
                         arg.description,
-                        true, arg.autocompleteHandler != null
+                        true, arg.builder is AutocompleteEligible && arg.builder.autocompleteFunction != null
                     )
                 })
             commandData.addOptions(
@@ -106,7 +107,7 @@ class DslSlashCommandExecutor : ListenerAdapter() {
                         arg.type,
                         arg.displayName,
                         arg.description,
-                        false, arg.autocompleteHandler != null
+                        false, arg.builder is AutocompleteEligible && arg.builder.autocompleteFunction != null
                     )
                 })
         }

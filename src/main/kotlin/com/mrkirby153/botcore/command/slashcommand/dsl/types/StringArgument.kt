@@ -12,19 +12,19 @@ class StringConverter : ArgumentConverter<String> {
     override fun convert(input: OptionMapping): String = input.asString
 }
 
-class StringArgument : ArgBuilder<String>(OptionType.STRING), IsAutocompleteEligible {
+class StringArgument : ArgBuilder<String>(OptionType.STRING), AutocompleteEligible {
 
     override var autocompleteFunction: AutoCompleteCallback? = null
     override fun build(arguments: Arguments): Argument<String> =
-        Argument(type, displayName, description, StringConverter(), autocompleteFunction)
+        Argument(type, displayName, description, StringConverter(), this)
 
 }
 
 class OptionalStringArgument : NullableArgBuilder<String>(OptionType.STRING),
-    IsAutocompleteEligible {
+    AutocompleteEligible {
     override var autocompleteFunction: AutoCompleteCallback? = null
     override fun build(arguments: Arguments): NullableArgument<String> =
-        NullableArgument(type, displayName, description, StringConverter(), autocompleteFunction)
+        NullableArgument(type, displayName, description, StringConverter(), this)
 }
 
 

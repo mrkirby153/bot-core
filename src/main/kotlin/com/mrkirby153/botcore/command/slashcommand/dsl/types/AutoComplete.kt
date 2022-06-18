@@ -6,10 +6,10 @@ import net.dv8tion.jda.api.interactions.commands.Command
 
 typealias AutoCompleteCallback = (CommandAutoCompleteInteractionEvent) -> List<Command.Choice>
 
-interface IsAutocompleteEligible {
+interface AutocompleteEligible {
     var autocompleteFunction: AutoCompleteCallback?
 }
 
-fun IsAutocompleteEligible.autoComplete(function: AutoCompleteCallback) {
+fun AutocompleteEligible.autoComplete(function: AutoCompleteCallback) {
     this.autocompleteFunction = function
 }
