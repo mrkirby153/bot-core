@@ -3,6 +3,7 @@ package com.mrkirby153.botcore.command.slashcommand.dsl
 import com.mrkirby153.botcore.command.CommandException
 import com.mrkirby153.botcore.command.args.BatchArgumentParseException
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.AutocompleteEligible
+import com.mrkirby153.botcore.command.slashcommand.dsl.types.HasMinAndMax
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
@@ -45,27 +46,52 @@ class DslSlashCommandExecutor : ListenerAdapter() {
         }
     }
 
+    private fun <T : Number> setMinMax(option: OptionData, builder: HasMinAndMax<T>) {
+        val min = builder.min
+        val max = builder.max
+        when (min) {
+            is Double -> option.setMinValue(min)
+            is Int, is Long -> option.setMinValue(min.toLong())
+        }
+        when (max) {
+            is Double -> option.setMaxValue(max)
+            is Int, is Long -> option.setMaxValue(max.toLong())
+        }
+    }
+
+    private fun createArgument(arg: NullableArgument<*>) = OptionData(
+        arg.type,
+        arg.displayName,
+        arg.description,
+        false,
+        arg.builder is AutocompleteEligible && arg.builder.autocompleteFunction != null
+    ).apply {
+        if (arg.builder is HasMinAndMax<*>) {
+            setMinMax(this, arg.builder)
+        }
+    }
+
+    private fun createArgument(arg: Argument<*>) = OptionData(
+        arg.type,
+        arg.displayName,
+        arg.description,
+        true,
+        arg.builder is AutocompleteEligible && arg.builder.autocompleteFunction != null
+    ).apply {
+        if (arg.builder is HasMinAndMax<*>) {
+            setMinMax(this, arg.builder)
+        }
+    }
+
     private fun populateArgs(data: SubcommandData, args: Arguments?) {
         if (args != null) {
             data.addOptions(
                 args.get().map { arg ->
-                    OptionData(
-                        arg.type,
-                        arg.displayName,
-                        arg.description,
-                        true,
-                        arg.builder is AutocompleteEligible && arg.builder.autocompleteFunction != null
-                    )
+                    createArgument(arg)
                 })
             data.addOptions(
                 args.getNullable().map { arg ->
-                    OptionData(
-                        arg.type,
-                        arg.displayName,
-                        arg.description,
-                        false,
-                        arg.builder is AutocompleteEligible && arg.builder.autocompleteFunction != null
-                    )
+                    createArgument(arg)
                 })
         }
     }
