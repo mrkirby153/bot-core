@@ -9,7 +9,8 @@ import net.dv8tion.jda.api.interactions.commands.OptionType
 open class GenericArgument<Type : Any>(
     type: OptionType,
     private val converter: () -> ArgumentConverter<Type>,
-) : ArgBuilder<Type>(type) {
+) : ArgBuilder<Type>(type), AutocompleteEligible{
+    override var autocompleteFunction: AutoCompleteCallback? = null
     override fun build(arguments: Arguments): Argument<Type> {
         return Argument(type, displayName, description, converter(), this)
     }
@@ -18,26 +19,11 @@ open class GenericArgument<Type : Any>(
 open class GenericNullableArgument<Type : Any>(
     type: OptionType,
     private val converter: () -> ArgumentConverter<Type>
-) : NullableArgBuilder<Type>(type) {
+) : NullableArgBuilder<Type>(type), AutocompleteEligible {
+    override var autocompleteFunction: AutoCompleteCallback? = null
     override fun build(arguments: Arguments): NullableArgument<Type> {
         return NullableArgument(type, displayName, description, converter(), this)
     }
-}
-
-open class GenericAutocompleteArgument<Type : Any>(
-    type: OptionType,
-    converter: () -> ArgumentConverter<Type>
-) : GenericArgument<Type>(type, converter),
-    AutocompleteEligible {
-    override var autocompleteFunction: AutoCompleteCallback? = null
-}
-
-open class GenericNullableAutocompleteArgument<Type : Any>(
-    type: OptionType,
-    converter: () -> ArgumentConverter<Type>
-) : GenericNullableArgument<Type>(type, converter),
-    AutocompleteEligible {
-    override var autocompleteFunction: AutoCompleteCallback? = null
 }
 
 fun <T : Any, Inst : ArgBuilder<T>> Arguments.genericArgument(

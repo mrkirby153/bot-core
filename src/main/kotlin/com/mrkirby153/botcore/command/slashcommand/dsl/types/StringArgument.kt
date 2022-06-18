@@ -11,10 +11,10 @@ class StringConverter : ArgumentConverter<String> {
     override fun convert(input: OptionMapping): String = input.asString
 }
 
-class StringArgument : GenericAutocompleteArgument<String>(OptionType.STRING, ::StringConverter)
+class StringArgument : GenericArgument<String>(OptionType.STRING, ::StringConverter)
 
 class OptionalStringArgument :
-    GenericNullableAutocompleteArgument<String>(OptionType.STRING, ::StringConverter)
+    GenericNullableArgument<String>(OptionType.STRING, ::StringConverter)
 
 
 fun Arguments.string(body: StringArgument.() -> Unit): Argument<String> =
