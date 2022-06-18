@@ -166,11 +166,16 @@ class DslSlashCommandExecutor : ListenerAdapter() {
                 .setEphemeral(true).queue()
         } catch (e: BatchArgumentParseException) {
             event.reply(buildString {
-                appendLine(":no_entry: Multiple errors occurred:")
-                e.exceptions.forEach { (fieldName, exception) ->
-                    appendLine(" `$fieldName`: ${exception.message ?: "An unknown error occurred!"}")
+                if (e.exceptions.size > 1) {
+                    appendLine(":no_entry: Multiple errors occurred:")
+                    e.exceptions.forEach { (fieldName, exception) ->
+                        appendLine(" `$fieldName`: ${exception.message ?: "An unknown error occurred!"}")
+                    }
+                } else {
+                    val (fieldName, ex) = e.exceptions.entries.first()
+                    appendLine(":no_entry: `$fieldName`: ${ex.message ?: "An unknown error occurred!"}")
                 }
-            })
+            }).setEphemeral(true).queue()
         }
     }
 
