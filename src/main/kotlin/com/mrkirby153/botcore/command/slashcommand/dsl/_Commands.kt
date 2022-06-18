@@ -3,8 +3,8 @@ package com.mrkirby153.botcore.command.slashcommand.dsl
 @DslMarker
 annotation class SlashDsl
 
-fun <T : Arguments> slashCommand(
-    arguments: () -> T,
+inline fun <T : Arguments> slashCommand(
+    noinline arguments: () -> T,
     body: SlashCommand<T>.() -> Unit
 ): SlashCommand<T> {
     val command = SlashCommand(arguments)
@@ -12,11 +12,11 @@ fun <T : Arguments> slashCommand(
     return command
 }
 
-fun slashCommand(body: SlashCommand<Arguments>.() -> Unit): SlashCommand<Arguments> {
+inline fun slashCommand(body: SlashCommand<Arguments>.() -> Unit): SlashCommand<Arguments> {
     return slashCommand(::Arguments, body)
 }
 
-fun SlashCommand<*>.group(name: String, body: Group.() -> Unit) {
+inline fun SlashCommand<*>.group(name: String, body: Group.() -> Unit) {
     val group = Group(name)
     body(group)
     if (this.groups[name] != null) {
@@ -25,12 +25,12 @@ fun SlashCommand<*>.group(name: String, body: Group.() -> Unit) {
     this.groups[name] = group
 }
 
-fun <T : Arguments> Group.slashCommand(arguments: () -> T, body: SubCommand<T>.() -> Unit) {
+inline fun <T : Arguments> Group.slashCommand(noinline arguments: () -> T, body: SubCommand<T>.() -> Unit) {
     val cmd = SubCommand(arguments)
     body(cmd)
     this.commands.add(cmd)
 }
 
-fun Group.slashCommand(body: SubCommand<Arguments>.() -> Unit) {
+inline fun Group.slashCommand(body: SubCommand<Arguments>.() -> Unit) {
     slashCommand(::Arguments, body)
 }

@@ -6,36 +6,36 @@ import com.mrkirby153.botcore.command.slashcommand.dsl.Arguments
 import com.mrkirby153.botcore.command.slashcommand.dsl.NullableArgument
 import net.dv8tion.jda.api.interactions.commands.OptionType
 
-open class GenericArgument<Converter : Any>(
+open class GenericArgument<Type : Any>(
     type: OptionType,
-    private val converter: () -> ArgumentConverter<Converter>,
-) : ArgBuilder<Converter>(type) {
-    override fun build(arguments: Arguments): Argument<Converter> {
+    private val converter: () -> ArgumentConverter<Type>,
+) : ArgBuilder<Type>(type) {
+    override fun build(arguments: Arguments): Argument<Type> {
         return Argument(type, displayName, description, converter(), this)
     }
 }
 
-open class GenericNullableArgument<Converter : Any>(
+open class GenericNullableArgument<Type : Any>(
     type: OptionType,
-    private val converter: () -> ArgumentConverter<Converter>
-) : NullableArgBuilder<Converter>(type) {
-    override fun build(arguments: Arguments): NullableArgument<Converter> {
+    private val converter: () -> ArgumentConverter<Type>
+) : NullableArgBuilder<Type>(type) {
+    override fun build(arguments: Arguments): NullableArgument<Type> {
         return NullableArgument(type, displayName, description, converter(), this)
     }
 }
 
-open class GenericAutocompleteArgument<Converter : Any>(
+open class GenericAutocompleteArgument<Type : Any>(
     type: OptionType,
-    converter: () -> ArgumentConverter<Converter>
-) : GenericArgument<Converter>(type, converter),
+    converter: () -> ArgumentConverter<Type>
+) : GenericArgument<Type>(type, converter),
     AutocompleteEligible {
     override var autocompleteFunction: AutoCompleteCallback? = null
 }
 
-open class GenericNullableAutocompleteArgument<Converter : Any>(
+open class GenericNullableAutocompleteArgument<Type : Any>(
     type: OptionType,
-    converter: () -> ArgumentConverter<Converter>
-) : GenericNullableArgument<Converter>(type, converter),
+    converter: () -> ArgumentConverter<Type>
+) : GenericNullableArgument<Type>(type, converter),
     AutocompleteEligible {
     override var autocompleteFunction: AutoCompleteCallback? = null
 }
