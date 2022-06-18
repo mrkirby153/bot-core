@@ -1,5 +1,6 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl.types
 
+import com.mrkirby153.botcore.command.args.ArgumentParseException
 import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentConverter
 import com.mrkirby153.botcore.command.slashcommand.dsl.Arguments
 import net.dv8tion.jda.api.interactions.commands.OptionMapping
@@ -7,7 +8,11 @@ import net.dv8tion.jda.api.interactions.commands.OptionType
 
 class DoubleConverter : ArgumentConverter<Double> {
     override fun convert(input: OptionMapping): Double {
-        return input.asDouble
+        try {
+            return input.asDouble
+        } catch (e: NumberFormatException) {
+            throw ArgumentParseException("The provided value could not be converted to a double")
+        }
     }
 }
 

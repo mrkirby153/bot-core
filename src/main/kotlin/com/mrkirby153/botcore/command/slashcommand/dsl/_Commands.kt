@@ -12,7 +12,22 @@ inline fun <T : Arguments> slashCommand(
     return command
 }
 
-inline fun slashCommand(body: SlashCommand<Arguments>.() -> Unit): SlashCommand<Arguments> {
+inline fun slashCommand(body: SlashCommand<Arguments>.() -> Unit) = slashCommand(::Arguments, body)
+
+inline fun <T : Arguments> SlashCommand<*>.subCommand(
+    noinline arguments: () -> T,
+    body: SubCommand<T>.() -> Unit
+) {
+    val command = SubCommand(arguments)
+    body(command)
+    this.subCommands[command.name] = command
+}
+
+inline fun SlashCommand<Arguments>.subCommand(body: SubCommand<Arguments>.() -> Unit) {
+    return subCommand(::Arguments, body)
+}
+
+inline fun SlashCommand<Arguments>.slashCommand(body: SlashCommand<Arguments>.() -> Unit): SlashCommand<Arguments> {
     return slashCommand(::Arguments, body)
 }
 
@@ -25,7 +40,10 @@ inline fun SlashCommand<*>.group(name: String, body: Group.() -> Unit) {
     this.groups[name] = group
 }
 
-inline fun <T : Arguments> Group.slashCommand(noinline arguments: () -> T, body: SubCommand<T>.() -> Unit) {
+inline fun <T : Arguments> Group.slashCommand(
+    noinline arguments: () -> T,
+    body: SubCommand<T>.() -> Unit
+) {
     val cmd = SubCommand(arguments)
     body(cmd)
     this.commands.add(cmd)

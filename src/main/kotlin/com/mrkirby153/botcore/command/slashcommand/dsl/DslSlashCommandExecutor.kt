@@ -1,5 +1,7 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl
 
+import com.mrkirby153.botcore.command.CommandException
+import com.mrkirby153.botcore.command.args.BatchArgumentParseException
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.AutocompleteEligible
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
@@ -51,7 +53,8 @@ class DslSlashCommandExecutor : ListenerAdapter() {
                         arg.type,
                         arg.displayName,
                         arg.description,
-                        true, arg.builder is AutocompleteEligible && arg.builder.autocompleteFunction != null
+                        true,
+                        arg.builder is AutocompleteEligible && arg.builder.autocompleteFunction != null
                     )
                 })
             data.addOptions(
@@ -60,7 +63,8 @@ class DslSlashCommandExecutor : ListenerAdapter() {
                         arg.type,
                         arg.displayName,
                         arg.description,
-                        false, arg.builder is AutocompleteEligible && arg.builder.autocompleteFunction != null
+                        false,
+                        arg.builder is AutocompleteEligible && arg.builder.autocompleteFunction != null
                     )
                 })
         }
@@ -98,7 +102,8 @@ class DslSlashCommandExecutor : ListenerAdapter() {
                         arg.type,
                         arg.displayName,
                         arg.description,
-                        true, arg.builder is AutocompleteEligible && arg.builder.autocompleteFunction != null
+                        true,
+                        arg.builder is AutocompleteEligible && arg.builder.autocompleteFunction != null
                     )
                 })
             commandData.addOptions(
@@ -107,7 +112,8 @@ class DslSlashCommandExecutor : ListenerAdapter() {
                         arg.type,
                         arg.displayName,
                         arg.description,
-                        false, arg.builder is AutocompleteEligible && arg.builder.autocompleteFunction != null
+                        false,
+                        arg.builder is AutocompleteEligible && arg.builder.autocompleteFunction != null
                     )
                 })
         }
@@ -127,7 +133,19 @@ class DslSlashCommandExecutor : ListenerAdapter() {
 
     fun execute(event: SlashCommandInteractionEvent) {
         val cmd = getSlashCommand(event) ?: return
-        cmd.execute(event)
+        try {
+            cmd.execute(event)
+        } catch (e: CommandException) {
+            event.reply(":no_entry: ${e.message ?: "An unknown error occurred!"}")
+                .setEphemeral(true).queue()
+        } catch (e: BatchArgumentParseException) {
+            event.reply(buildString {
+                appendLine(":no_entry: Multiple errors occurred:")
+                e.exceptions.forEach { (fieldName, exception) ->
+                    appendLine(" `$fieldName`: ${exception.message ?: "An unknown error occurred!"}")
+                }
+            })
+        }
     }
 
     fun handleAutocomplete(event: CommandAutoCompleteInteractionEvent) {

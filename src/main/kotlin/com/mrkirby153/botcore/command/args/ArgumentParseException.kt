@@ -6,3 +6,12 @@ package com.mrkirby153.botcore.command.args
  * @param msg The error message
  */
 class ArgumentParseException(msg: String) : RuntimeException(msg)
+
+class BatchArgumentParseException(val exceptions: Map<String, ArgumentParseException>) :
+    RuntimeException(
+        buildString {
+            appendLine("The following errors have occurred:")
+            exceptions.forEach { (k, v) ->
+                appendLine("- `$k`: $v")
+            }
+        })

@@ -20,13 +20,14 @@ class ChannelArgument<T>(val mapper: (OptionMapping) -> T) : ArgumentConverter<T
 
 private val textChannelConverter = {
     ChannelArgument {
-        it.asTextChannel ?: throw ArgumentParseException("Must specify a text channel")
+        it.asTextChannel ?: throw ArgumentParseException("Provided channel was not a text channel")
     }
 }
 
 private val voiceChannelConverter = {
     ChannelArgument {
-        it.asVoiceChannel ?: throw ArgumentParseException("Must specify a voice channel")
+        it.asVoiceChannel
+            ?: throw ArgumentParseException("Provided channel was not a voice channel")
     }
 }
 
@@ -38,19 +39,21 @@ private val guildChannelConverter = {
 
 private val messageChannelConverter = {
     ChannelArgument {
-        it.asMessageChannel ?: throw ArgumentParseException("Must specify a message channel")
+        it.asMessageChannel
+            ?: throw ArgumentParseException("Provided channel was not a message channel")
     }
 }
 
 private val stageChannelConverter = {
     ChannelArgument {
-        it.asStageChannel ?: throw ArgumentParseException("Must specify a stage channel")
+        it.asStageChannel
+            ?: throw ArgumentParseException("Provided channel was not a stage channel")
     }
 }
 
 private val threadChannelConverter = {
     ChannelArgument {
-        it.asThreadChannel ?: throw ArgumentParseException("Must specify a thread")
+        it.asThreadChannel ?: throw ArgumentParseException("Provided channel was not a thread")
     }
 }
 
