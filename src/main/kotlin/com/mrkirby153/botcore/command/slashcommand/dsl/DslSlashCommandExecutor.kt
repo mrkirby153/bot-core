@@ -4,6 +4,7 @@ import com.mrkirby153.botcore.command.CommandException
 import com.mrkirby153.botcore.command.args.BatchArgumentParseException
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.AutocompleteEligible
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.HasMinAndMax
+import com.mrkirby153.botcore.command.slashcommand.dsl.types.IArgBuilder
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
@@ -59,27 +60,15 @@ class DslSlashCommandExecutor : ListenerAdapter() {
         }
     }
 
-    private fun createArgument(arg: NullableArgument<*>) = OptionData(
+    private fun createOption(arg: IArgument<*, out IArgBuilder<*>>) = OptionData(
         arg.type,
         arg.displayName,
         arg.description,
-        false,
-        arg.builder is AutocompleteEligible && arg.builder.autocompleteFunction != null
+        arg is NullableArgument,
+        arg.builder is AutocompleteEligible && (arg.builder as AutocompleteEligible).autocompleteFunction != null
     ).apply {
         if (arg.builder is HasMinAndMax<*>) {
-            setMinMax(this, arg.builder)
-        }
-    }
-
-    private fun createArgument(arg: Argument<*>) = OptionData(
-        arg.type,
-        arg.displayName,
-        arg.description,
-        true,
-        arg.builder is AutocompleteEligible && arg.builder.autocompleteFunction != null
-    ).apply {
-        if (arg.builder is HasMinAndMax<*>) {
-            setMinMax(this, arg.builder)
+            setMinMax(this, arg.builder as HasMinAndMax<*>)
         }
     }
 
@@ -87,11 +76,7 @@ class DslSlashCommandExecutor : ListenerAdapter() {
         if (args != null) {
             data.addOptions(
                 args.get().map { arg ->
-                    createArgument(arg)
-                })
-            data.addOptions(
-                args.getNullable().map { arg ->
-                    createArgument(arg)
+                    createOption(arg)
                 })
         }
     }
@@ -123,24 +108,8 @@ class DslSlashCommandExecutor : ListenerAdapter() {
         val args = cmd.args()
         if (args != null) {
             commandData.addOptions(
-                args.get().map { arg ->
-                    OptionData(
-                        arg.type,
-                        arg.displayName,
-                        arg.description,
-                        true,
-                        arg.builder is AutocompleteEligible && arg.builder.autocompleteFunction != null
-                    )
-                })
-            commandData.addOptions(
-                args.getNullable().map { arg ->
-                    OptionData(
-                        arg.type,
-                        arg.displayName,
-                        arg.description,
-                        false,
-                        arg.builder is AutocompleteEligible && arg.builder.autocompleteFunction != null
-                    )
+                args.get().sortedBy { a -> if (a is NullableArgument) -1 else 1 }.map { arg ->
+                    createOption(arg)
                 })
         }
         commandData

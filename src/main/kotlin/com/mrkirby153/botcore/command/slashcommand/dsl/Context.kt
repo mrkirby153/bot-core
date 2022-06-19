@@ -27,30 +27,30 @@ class Context<A : Arguments>(
         val args = command.args() ?: return
         this.args = args
 
-        // Parse all required arguments
+
         val argParseErrors = mutableMapOf<String, String>()
         args.get().forEach { arg ->
             val name = arg.displayName
             val raw =
-                event.getOption(name) ?: throw ArgumentParseException("Missing argument $name")
-            try {
-                arg.parse(raw)
-            } catch (e: ArgumentParseException) {
-                argParseErrors[name] = e.message ?: "An unknown parse error occurred"
-            }
-        }
-        // Parse all optional arguments
-        args.getNullable().forEach { arg ->
-            val name = arg.displayName
-            val raw = event.getOption(name) ?: return@forEach
-            try {
-                arg.parse(raw)
-            } catch (e: ArgumentParseException) {
-                argParseErrors[name] = e.message ?: "An unknown parse error occurred"
+                event.getOption(name)
+            if (raw == null) {
+                if (arg !is NullableArgument) {
+                    argParseErrors[name] = "Required argument was not provided"
+                }
+            } else {
+                try {
+                    arg.parse(raw)
+                } catch (e: ArgumentParseException) {
+                    argParseErrors[name] = e.message ?: "An unknown parse error occurred"
+                }
             }
         }
         if (argParseErrors.isNotEmpty()) {
-            throw BatchArgumentParseException(argParseErrors.map { (k, v) -> k to ArgumentParseException(v) }.toMap())
+            throw BatchArgumentParseException(argParseErrors.map { (k, v) ->
+                k to ArgumentParseException(
+                    v
+                )
+            }.toMap())
         }
     }
 }

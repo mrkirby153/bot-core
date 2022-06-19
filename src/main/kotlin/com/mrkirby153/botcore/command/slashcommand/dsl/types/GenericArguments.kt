@@ -44,6 +44,6 @@ fun <T : Any, Inst : NullableArgBuilder<T>> Arguments.optionalGenericArgument(
     val builder = creator()
     body(builder)
     val built = builder.build(this)
-    this.addNullable(built)
+    this.addArgument(built)
     return built
 }

@@ -25,17 +25,16 @@ open class AbstractSlashCommand<A : Arguments>(
         val argInst =
             args() ?: return listOf(Command.Choice("<<INVALID AUTOCOMPLETE SETTING>>", -1))
         val focused = event.focusedOption.name
-        val nullable = argInst.getNullable(focused)
-        val nonNullable = argInst.get(focused)
-        if (nullable == null && nonNullable == null) {
-            return emptyList()
+        val inst = argInst.get(focused) ?: return emptyList()
+        val builder = inst.builder
+        if (builder is AutocompleteEligible) {
+            return if (builder.autocompleteFunction != null) {
+                builder.autocompleteFunction!!.invoke(event)
+            } else {
+                listOf(Command.Choice("<<NO AUTOCOMPLETE HANDLER>>", -1))
+            }
         }
-        if (nullable != null) {
-            return (nullable.builder as AutocompleteEligible).autocompleteFunction?.invoke(event)
-                ?: listOf(Command.Choice("<<NO AUTOCOMPLETE HANDLER>>", -1))
-        }
-        return (nonNullable?.builder as? AutocompleteEligible)?.autocompleteFunction?.invoke(event)
-            ?: listOf(Command.Choice("<<NO AUTOCOMPLETE HANDLER>>", -1))
+        return emptyList()
     }
 }
 
