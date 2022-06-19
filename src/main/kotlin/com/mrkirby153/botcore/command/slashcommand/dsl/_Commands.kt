@@ -52,3 +52,15 @@ inline fun <T : Arguments> Group.slashCommand(
 inline fun Group.slashCommand(body: SubCommand<Arguments>.() -> Unit) {
     slashCommand(::Arguments, body)
 }
+
+inline fun userContextCommand(body: UserContextCommand.() -> Unit): ContextCommand<UserContext> {
+    val builder = UserContextCommand()
+    body(builder)
+    return builder
+}
+
+inline fun messageContextCommand(body: MessageContextCommand.() -> Unit): ContextCommand<MessageContext> {
+    val builder = MessageContextCommand()
+    body(builder)
+    return builder
+}

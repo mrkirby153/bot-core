@@ -7,7 +7,9 @@ import com.mrkirby153.botcore.command.slashcommand.dsl.types.HasMinAndMax
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.IArgBuilder
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
+import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
+import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.interactions.commands.Command
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
@@ -15,11 +17,14 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData
+import net.dv8tion.jda.api.interactions.commands.context.ContextInteraction
 import java.util.concurrent.CompletableFuture
 
 class DslSlashCommandExecutor : ListenerAdapter() {
 
-    private val registeredCommands = mutableMapOf<String, SlashCommand<*>>()
+    private val registeredCommands = mutableMapOf<String, SlashCommand<out Arguments>>()
+    private val userContextCommands = mutableListOf<UserContextCommand>()
+    private val messageContextCommands = mutableListOf<MessageContextCommand>()
 
     private fun getSlashCommand(event: SlashCommandInteractionEvent): AbstractSlashCommand<*>? {
         val command = registeredCommands[event.name] ?: return null
@@ -81,38 +86,51 @@ class DslSlashCommandExecutor : ListenerAdapter() {
         }
     }
 
-    private fun buildCommandData(): List<CommandData> = registeredCommands.map {
-        val cmd = it.value
-        val commandData = Commands.slash(cmd.name, cmd.description)
-        if (cmd.subCommands.isNotEmpty()) {
-            commandData.addSubcommands(cmd.subCommands.map { sub ->
-                val subCmd = sub.value
-                SubcommandData(subCmd.name, subCmd.description).apply {
-                    populateArgs(this, subCmd.args())
-                }
-            })
-        }
-        if (cmd.groups.isNotEmpty()) {
-            commandData.addSubcommandGroups(cmd.groups.map { group ->
-                val grp = group.value
-                SubcommandGroupData(grp.name, grp.description).addSubcommands(
-                    grp.commands.map { sub ->
-                        SubcommandData(
-                            sub.name,
-                            sub.description
-                        ).apply { populateArgs(this, sub.args()) }
+    private fun buildCommandData(): List<CommandData> {
+        val commands: MutableList<CommandData> = registeredCommands.map {
+            val cmd = it.value
+            val commandData = Commands.slash(cmd.name, cmd.description)
+            if (cmd.subCommands.isNotEmpty()) {
+                commandData.addSubcommands(cmd.subCommands.map { sub ->
+                    val subCmd = sub.value
+                    SubcommandData(subCmd.name, subCmd.description).apply {
+                        populateArgs(this, subCmd.args())
                     }
-                )
-            })
-        }
-        val args = cmd.args()
-        if (args != null) {
-            commandData.addOptions(
-                args.get().sortedBy { a -> if (a is NullableArgument) -1 else 1 }.map { arg ->
-                    createOption(arg)
                 })
-        }
-        commandData
+            }
+            if (cmd.groups.isNotEmpty()) {
+                commandData.addSubcommandGroups(cmd.groups.map { group ->
+                    val grp = group.value
+                    SubcommandGroupData(grp.name, grp.description).addSubcommands(
+                        grp.commands.map { sub ->
+                            SubcommandData(
+                                sub.name,
+                                sub.description
+                            ).apply { populateArgs(this, sub.args()) }
+                        }
+                    )
+                })
+            }
+            val args = cmd.args()
+            if (args != null) {
+                commandData.addOptions(
+                    args.get().sortedBy { a -> if (a is NullableArgument) -1 else 1 }.map { arg ->
+                        createOption(arg)
+                    })
+            }
+            commandData
+        }.toMutableList()
+        val registeredContextCommands =
+            listOf(*userContextCommands.toTypedArray(), *messageContextCommands.toTypedArray())
+        commands.addAll(registeredContextCommands.mapNotNull { cmd ->
+            val c = when (cmd) {
+                is UserContextCommand -> Commands.user(cmd.name)
+                is MessageContextCommand -> Commands.message(cmd.name)
+                else -> null
+            }
+            c
+        })
+        return commands
     }
 
     fun commit(jda: JDA): CompletableFuture<MutableList<Command>> {
@@ -154,9 +172,18 @@ class DslSlashCommandExecutor : ListenerAdapter() {
         event.replyChoices(options).queue()
     }
 
-    fun register(vararg commands: SlashCommand<*>) {
+    fun register(vararg commands: SlashCommand<out Arguments>) {
         commands.forEach { command ->
             registeredCommands[command.name] = command
+        }
+    }
+
+    fun register(vararg commands: ContextCommand<out ContextInteraction<*>>) {
+        commands.forEach {
+            when (it) {
+                is MessageContextCommand -> messageContextCommands.add(it)
+                is UserContextCommand -> userContextCommands.add(it)
+            }
         }
     }
 
@@ -168,5 +195,13 @@ class DslSlashCommandExecutor : ListenerAdapter() {
     override fun onCommandAutoCompleteInteraction(event: CommandAutoCompleteInteractionEvent) {
         if (getSlashCommand(event) != null)
             handleAutocomplete(event)
+    }
+
+    override fun onUserContextInteraction(event: UserContextInteractionEvent) {
+        userContextCommands.firstOrNull { it.name == event.name }?.execute(UserContext(event))
+    }
+
+    override fun onMessageContextInteraction(event: MessageContextInteractionEvent) {
+        messageContextCommands.firstOrNull { it.name == event.name }?.execute(MessageContext(event))
     }
 }

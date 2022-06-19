@@ -9,14 +9,14 @@ import net.dv8tion.jda.api.interactions.commands.Command
 open class AbstractSlashCommand<A : Arguments>(
     private val arguments: (() -> A)?
 ) {
-    var body: (Context<A>.() -> Unit)? = null
+    var body: (SlashContext<A>.() -> Unit)? = null
     lateinit var name: String
     lateinit var description: String
 
     fun args() = arguments?.invoke()
 
     fun execute(event: SlashCommandInteractionEvent) {
-        val ctx = Context(this, event)
+        val ctx = SlashContext(this, event)
         ctx.load()
         body?.invoke(ctx)
     }
@@ -46,7 +46,7 @@ class SlashCommand<A : Arguments>(
     val subCommands = mutableMapOf<String, SubCommand<*>>()
     val groups = mutableMapOf<String, Group>()
 
-    fun action(action: Context<A>.() -> Unit) {
+    fun action(action: SlashContext<A>.() -> Unit) {
         if (groups.isNotEmpty()) {
             throw IllegalArgumentException("Cannot mix groups and non-grouped commands")
         }
@@ -80,7 +80,7 @@ class Group(
 @SlashDsl
 class SubCommand<A : Arguments>(arguments: (() -> A)? = null) :
     AbstractSlashCommand<A>(arguments) {
-    fun action(action: Context<A>.() -> Unit) {
+    fun action(action: SlashContext<A>.() -> Unit) {
         this.body = action
     }
 }
