@@ -5,6 +5,7 @@ import net.dv8tion.jda.api.interactions.commands.context.ContextInteraction
 open class ContextCommand<Event : ContextInteraction<*>> {
     lateinit var name: String
     private lateinit var commandAction: (Event) -> Unit
+    var enabledByDefault = true
 
     fun action(action: (Event) -> Unit) {
         this.commandAction = action

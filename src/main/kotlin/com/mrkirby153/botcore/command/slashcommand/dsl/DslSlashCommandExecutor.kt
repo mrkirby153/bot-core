@@ -3,8 +3,8 @@ package com.mrkirby153.botcore.command.slashcommand.dsl
 import com.mrkirby153.botcore.command.CommandException
 import com.mrkirby153.botcore.command.args.BatchArgumentParseException
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.AutocompleteEligible
-import com.mrkirby153.botcore.command.slashcommand.dsl.types.HasMinAndMax
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.IArgBuilder
+import com.mrkirby153.botcore.command.slashcommand.dsl.types.ModifiesOption
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent
@@ -52,19 +52,6 @@ class DslSlashCommandExecutor : ListenerAdapter() {
         }
     }
 
-    private fun <T : Number> setMinMax(option: OptionData, builder: HasMinAndMax<T>) {
-        val min = builder.min
-        val max = builder.max
-        when (min) {
-            is Double -> option.setMinValue(min)
-            is Int, is Long -> option.setMinValue(min.toLong())
-        }
-        when (max) {
-            is Double -> option.setMaxValue(max)
-            is Int, is Long -> option.setMaxValue(max.toLong())
-        }
-    }
-
     private fun createOption(arg: IArgument<*, out IArgBuilder<*>>) = OptionData(
         arg.type,
         arg.displayName,
@@ -72,8 +59,8 @@ class DslSlashCommandExecutor : ListenerAdapter() {
         arg is NullableArgument,
         arg.builder is AutocompleteEligible && (arg.builder as AutocompleteEligible).autocompleteFunction != null
     ).apply {
-        if (arg.builder is HasMinAndMax<*>) {
-            setMinMax(this, arg.builder as HasMinAndMax<*>)
+        if (arg.builder is ModifiesOption) {
+            (arg.builder as ModifiesOption).modify(this)
         }
     }
 

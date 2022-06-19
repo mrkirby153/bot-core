@@ -23,9 +23,13 @@ class EnumConverter<T : Enum<T>>(
     }
 }
 
-interface IEnumArgument<T : Enum<T>> {
+interface IEnumArgument<T : Enum<T>> : ModifiesOption {
     val getter: (OptionMapping) -> T?
     val validEnums: Array<T>
+
+    override fun modify(option: OptionData) {
+        option.addChoices(validEnums.map { Command.Choice(it.toString(), it.name) })
+    }
 }
 
 private fun <T : Enum<T>> IEnumArgument<T>.getAutocompleteFunc(): AutoCompleteCallback {

@@ -4,10 +4,15 @@ import com.mrkirby153.botcore.command.slashcommand.dsl.Argument
 import com.mrkirby153.botcore.command.slashcommand.dsl.Arguments
 import com.mrkirby153.botcore.command.slashcommand.dsl.NullableArgument
 import net.dv8tion.jda.api.interactions.commands.OptionType
+import net.dv8tion.jda.api.interactions.commands.build.OptionData
 
-interface IArgBuilder<T: Any> {
+interface IArgBuilder<T : Any> {
     var displayName: String
     var description: String
+}
+
+interface ModifiesOption {
+    fun modify(option: OptionData)
 }
 
 abstract class ArgBuilder<T : Any>(val type: OptionType) : IArgBuilder<T> {
