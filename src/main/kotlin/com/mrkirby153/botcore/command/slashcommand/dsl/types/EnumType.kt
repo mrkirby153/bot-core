@@ -32,26 +32,14 @@ interface IEnumArgument<T : Enum<T>> : ModifiesOption {
     }
 }
 
-private fun <T : Enum<T>> IEnumArgument<T>.getAutocompleteFunc(): AutoCompleteCallback {
-    return { ac ->
-        val value = ac.focusedOption.value.lowercase().replace("_", " ")
-        validEnums.filter {
-            val enumName = it.name.lowercase().replace("_", " ")
-            enumName.startsWith(value)
-        }.map {
-            Command.Choice(it.toString(), it.name)
-        }.take(OptionData.MAX_CHOICES).toList()
-    }
-}
-
 class EnumArgument<T : Enum<T>>(
     override val getter: (OptionMapping) -> T?,
     override val validEnums: Array<T>
 ) : GenericArgument<T>(OptionType.STRING, { EnumConverter(getter, validEnums) }), IEnumArgument<T> {
     override var autocompleteFunction: AutoCompleteCallback?
-        get() = getAutocompleteFunc()
-        set(_) {
-            throw IllegalArgumentException("Cannot set autocomplete functions for enum types")
+        get() = super.autocompleteFunction
+        set(value) {
+            throw IllegalArgumentException("Cannot set autocomplete for enums")
         }
 }
 
@@ -61,11 +49,11 @@ class OptionalEnumArgument<T : Enum<T>>(
 ) : GenericNullableArgument<T>(OptionType.STRING, { EnumConverter(getter, validEnums) }),
     IEnumArgument<T> {
     override var autocompleteFunction: AutoCompleteCallback?
-        get() = getAutocompleteFunc()
-        set(_) {
-            throw IllegalArgumentException("Cannot set autocomplete functions for enum types")
+        get() = super.autocompleteFunction
+        set(value) {
+            throw IllegalArgumentException("Cannot set autocomplete for enums")
         }
-}
+    }
 
 inline fun <reified T : Enum<T>> Arguments.enum(
     noinline body: EnumArgument<T>.() -> Unit
