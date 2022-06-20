@@ -5,6 +5,7 @@ import com.mrkirby153.botcore.command.args.BatchArgumentParseException
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.AutocompleteEligible
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.IArgBuilder
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.ModifiesOption
+import com.mrkirby153.botcore.log
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent
@@ -122,11 +123,14 @@ class DslCommandExecutor : ListenerAdapter() {
     }
 
     fun commit(jda: JDA): CompletableFuture<MutableList<Command>> {
-        return jda.updateCommands().addCommands(buildCommandData()).submit()
+        val commands = buildCommandData()
+        log.debug("Committing {} commands globally", commands.size)
+        return jda.updateCommands().addCommands(commands).submit()
     }
 
     fun commit(jda: JDA, vararg guilds: String): CompletableFuture<Void> {
         val commands = buildCommandData()
+        log.debug("Committing {} commands to the following guilds: {}", commands.size, guilds)
         val futures = guilds.mapNotNull { jda.getGuildById(it) }
             .map { it.updateCommands().addCommands(commands).submit() }
         return CompletableFuture.allOf(*futures.toTypedArray())
@@ -134,6 +138,7 @@ class DslCommandExecutor : ListenerAdapter() {
 
     fun execute(event: SlashCommandInteractionEvent) {
         val cmd = getSlashCommand(event) ?: return
+        log.trace("Executing slash command ${event.commandPath}")
         try {
             cmd.execute(event)
         } catch (e: CommandException) {
@@ -156,18 +161,22 @@ class DslCommandExecutor : ListenerAdapter() {
 
     fun handleAutocomplete(event: CommandAutoCompleteInteractionEvent) {
         val cmd = getSlashCommand(event) ?: return
+        log.trace("Handling autocomplete for {}", event.commandPath)
         val options = cmd.handleAutocomplete(event)
+        log.trace("Suggested options: [{}]", options.joinToString(",") { it.name })
         event.replyChoices(options).queue()
     }
 
     fun register(vararg commands: SlashCommand<out Arguments>) {
         commands.forEach { command ->
+            log.trace("Registering command {}", command.name)
             registeredCommands[command.name] = command
         }
     }
 
     fun register(vararg commands: ContextCommand<out ContextInteraction<*>>) {
         commands.forEach {
+            log.trace("Registering context command {}", it.name)
             when (it) {
                 is MessageContextCommand -> messageContextCommands.add(it)
                 is UserContextCommand -> userContextCommands.add(it)

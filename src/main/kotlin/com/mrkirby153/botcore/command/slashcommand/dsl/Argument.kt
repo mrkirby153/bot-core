@@ -36,6 +36,10 @@ data class Argument<T : Any>(
     operator fun getValue(args: Arguments, property: KProperty<*>): T {
         return parsed
     }
+
+    override fun toString(): String {
+        return parsed.toString()
+    }
 }
 
 data class NullableArgument<T: Any>(
@@ -53,5 +57,9 @@ data class NullableArgument<T: Any>(
 
     operator fun getValue(args: Arguments, property: KProperty<*>): T? {
         return parsed
+    }
+
+    override fun toString(): String {
+        return parsed?.toString() ?: "null"
     }
 }
