@@ -14,6 +14,29 @@ inline fun <T : Arguments> slashCommand(
 
 inline fun slashCommand(body: SlashCommand<Arguments>.() -> Unit) = slashCommand(::Arguments, body)
 
+inline fun <T: Arguments> DslCommandExecutor.slashCommand(noinline arguments: () -> T, body: SlashCommand<T>.() -> Unit): SlashCommand<T> {
+    val command = SlashCommand(arguments)
+    body(command)
+    this.register(command)
+    return command
+}
+
+inline fun DslCommandExecutor.slashCommand(body: SlashCommand<Arguments>.() -> Unit) = this.register(slashCommand(::Arguments, body))
+
+inline fun DslCommandExecutor.messageContextCommand(body: MessageContextCommand.() -> Unit): ContextCommand<MessageContext> {
+    val command = MessageContextCommand()
+    body(command)
+    this.register(command)
+    return command
+}
+
+inline fun DslCommandExecutor.userContextCommand(body: UserContextCommand.() -> Unit): ContextCommand<UserContext> {
+    val command = UserContextCommand()
+    body(command)
+    this.register(command)
+    return command
+}
+
 inline fun <T : Arguments> SlashCommand<*>.subCommand(
     noinline arguments: () -> T,
     body: SubCommand<T>.() -> Unit
@@ -25,10 +48,6 @@ inline fun <T : Arguments> SlashCommand<*>.subCommand(
 
 inline fun SlashCommand<Arguments>.subCommand(body: SubCommand<Arguments>.() -> Unit) {
     return subCommand(::Arguments, body)
-}
-
-inline fun SlashCommand<Arguments>.slashCommand(body: SlashCommand<Arguments>.() -> Unit): SlashCommand<Arguments> {
-    return slashCommand(::Arguments, body)
 }
 
 inline fun SlashCommand<*>.group(name: String, body: Group.() -> Unit) {

@@ -6,14 +6,12 @@ import com.mrkirby153.botcore.command.slashcommand.dsl.types.AutocompleteEligibl
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.IArgBuilder
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.ModifiesOption
 import net.dv8tion.jda.api.JDA
-import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.interactions.commands.Command
-import net.dv8tion.jda.api.interactions.commands.CommandPermissions
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
 import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
@@ -22,7 +20,7 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData
 import net.dv8tion.jda.api.interactions.commands.context.ContextInteraction
 import java.util.concurrent.CompletableFuture
 
-class DslSlashCommandExecutor : ListenerAdapter() {
+class DslCommandExecutor : ListenerAdapter() {
 
     private val registeredCommands = mutableMapOf<String, SlashCommand<out Arguments>>()
     private val userContextCommands = mutableListOf<UserContextCommand>()
@@ -58,7 +56,7 @@ class DslSlashCommandExecutor : ListenerAdapter() {
         arg.type,
         arg.displayName,
         arg.description,
-        arg is NullableArgument,
+        arg !is NullableArgument,
         arg.builder is AutocompleteEligible && (arg.builder as AutocompleteEligible).autocompleteFunction != null
     ).apply {
         if (arg.builder is ModifiesOption) {
@@ -175,6 +173,10 @@ class DslSlashCommandExecutor : ListenerAdapter() {
                 is UserContextCommand -> userContextCommands.add(it)
             }
         }
+    }
+
+    fun registerCommands(body: DslCommandExecutor.() -> Unit) {
+        body(this)
     }
 
     override fun onSlashCommandInteraction(event: SlashCommandInteractionEvent) {
