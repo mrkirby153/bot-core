@@ -1,9 +1,11 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl
 
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.AutocompleteEligible
+import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.Command
+import net.dv8tion.jda.api.interactions.commands.CommandPermissions
 
 
 open class AbstractSlashCommand<A : Arguments>(
@@ -45,6 +47,7 @@ class SlashCommand<A : Arguments>(
 
     val subCommands = mutableMapOf<String, SubCommand<*>>()
     val groups = mutableMapOf<String, Group>()
+    internal var commandPermissions = CommandPermissions.ENABLED
 
     fun action(action: SlashContext<A>.() -> Unit) {
         if (groups.isNotEmpty()) {
@@ -53,18 +56,16 @@ class SlashCommand<A : Arguments>(
         this.body = action
     }
 
-    override fun toString(): String {
-        return buildString {
-            appendLine("SlashCommand: $name")
-            val arguments = args()
-            if (arguments != null) {
-                append("args: ${arguments.get().joinToString(",")}")
-            }
-        }
-    }
-
     fun getSubCommand(name: String) = subCommands[name]
     fun getSubCommand(group: String, name: String) = groups[group]?.getCommand(name)
+
+    fun defaultPermissions(vararg permissions: Permission) {
+        commandPermissions = CommandPermissions.enabledFor(*permissions)
+    }
+
+    fun disabledByDefault() {
+        commandPermissions = CommandPermissions.DISABLED
+    }
 
 }
 
