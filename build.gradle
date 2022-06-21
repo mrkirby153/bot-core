@@ -41,6 +41,7 @@ sourceCompatibility = "1.9"
 
 java {
     withSourcesJar()
+    withJavadocJar()
 }
 
 publishing {
@@ -50,13 +51,9 @@ publishing {
         }
     }
 }
-task sourceJar(type: Jar, dependsOn: project.classes) {
-    classifier 'sources'
-}
 
-task javadocJar(type: Jar, dependsOn: project.javadoc) {
-    classifier 'javadoc'
-}
+javadocJar.dependsOn dokkaJavadoc
+javadocJar.from dokkaJavadoc
 
 
 String propertyOrEnv(property, env) {
@@ -93,4 +90,8 @@ compileTestKotlin {
         jvmTarget = "11"
     }
 }
-targetCompatibility = JavaVersion.VERSION_1_9
+targetCompatibility = JavaVersion.VERSION_11
+
+tasks.dokkaHtml.configure {
+    suppressInheritedMembers.set(true)
+}

@@ -21,7 +21,7 @@ import java.util.Map;
 /**
  * Autoconfiguration for chat based commands. This will automatically be loaded when
  * the {@code bot.command.chat.autoconfigure} property is set to {@code true}.
- * <br/>
+ * <br>
  * All beans declared by this class can be manually overridden by declaring them locally
  */
 @Configuration

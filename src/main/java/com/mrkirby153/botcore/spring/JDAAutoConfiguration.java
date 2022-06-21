@@ -95,7 +95,7 @@ public class JDAAutoConfiguration {
     }
 
     /**
-     * Bean for the JDA -> Spring event bus
+     * Bean for the JDA to Spring event bus
      *
      * @return The Event Handler
      */
