@@ -7,6 +7,11 @@ package com.mrkirby153.botcore.command.args
  */
 class ArgumentParseException(msg: String) : RuntimeException(msg)
 
+/**
+ * An exception thrown when multiple errors occur when parsing arguments
+ *
+ * @param exceptions The exceptions that occurred
+ */
 class BatchArgumentParseException(val exceptions: Map<String, ArgumentParseException>) :
     RuntimeException(
         buildString {

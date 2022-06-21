@@ -5,6 +5,8 @@ import java.lang.reflect.Method
 /**
  * A skeleton command (one without a method executor attached). Used for keeping track of empty
  * branches in the command tree
+ *
+ * @param name The name of this node
  */
 class SkeletonCommandNode(private val name: String) : CommandNode {
 
@@ -59,6 +61,10 @@ class SkeletonCommandNode(private val name: String) : CommandNode {
 
 /**
  * A node with a method, metadata, and instance attached.
+ *
+ * @param metadata The command metadata
+ * @param method The method that will be invoked when this command is run
+ * @param instance The instance that [method] will be invoked on
  */
 class ResolvedCommandNode(val metadata: CommandExecutor.CommandMetadata, val method: Method,
                           val instance: Any) : CommandNode {

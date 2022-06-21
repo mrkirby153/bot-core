@@ -10,30 +10,46 @@ import com.mrkirby153.botcore.command.help.Hidden
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.ChannelType
-import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Message
+import net.dv8tion.jda.api.sharding.ShardManager
 import java.lang.reflect.InvocationTargetException
 import java.util.LinkedList
-import java.util.function.BiFunction
 import java.util.function.Function
 import java.util.regex.Pattern
 import kotlin.math.roundToInt
 
 /**
- * An executor for executing commands
+ * An executor for executing chat commands
+ *
+ * @param prefix The prefix used for commands
+ * @param mentionMode The mention mode that this executor will use
+ * @param jda A [JDA] instance to use in clearance resolvers
+ * @param shardManager A [ShardManager] to use in clearance resolvers. Takes precedence over [jda]
  */
 
-open class CommandExecutor(private val prefix: String,
-                           private val mentionMode: MentionMode = MentionMode.OPTIONAL,
-                           private val jda: JDA? = null,
-                           private val shardManager: net.dv8tion.jda.api.sharding.ShardManager? = null) {
+open class CommandExecutor(
+    private val prefix: String,
+    private val mentionMode: MentionMode = MentionMode.OPTIONAL,
+    private val jda: JDA? = null,
+    private val shardManager: ShardManager? = null
+) {
 
     private val parentNode = SkeletonCommandNode("$\$ROOT$$")
 
+    /**
+     * The clearance resolver used to determine clearance
+     */
     lateinit var clearanceResolver: ClearanceResolver
 
+    /**
+     * If the bot should alert if the user attempted to execute a command that does not exist
+     */
     var alertUnknownCommand = true
+
+    /**
+     * If the bot should alert if the user does not have the neccecary clearance to perform this command
+     */
     var alertNoClearance = true
 
     private val resolvers = mutableMapOf<String, CommandContextResolver>()
@@ -73,14 +89,19 @@ open class CommandExecutor(private val prefix: String,
             val parent = annotation.parent
 
             val desc = method.getAnnotation(
-                    Description::class.java)?.value ?: "No description provided"
+                Description::class.java
+            )?.value ?: "No description provided"
 
-            val metadata = CommandMetadata(cmdName, clearance, arguments.toList(),
-                    method.isAnnotationPresent(
-                            Hidden::class.java), desc, annotation.permissions)
+            val metadata = CommandMetadata(
+                cmdName, clearance, arguments.toList(),
+                method.isAnnotationPresent(
+                    Hidden::class.java
+                ), desc, annotation.permissions
+            )
 
             var parentNode = (if (parent.isNotBlank()) this.parentNode.getChild(
-                    parent) else this.parentNode)
+                parent
+            ) else this.parentNode)
 
             if (parentNode == null) {
                 val sk = SkeletonCommandNode(parent)
@@ -103,7 +124,8 @@ open class CommandExecutor(private val prefix: String,
                             p!!.addChild(node)
                         } else {
                             throw IllegalArgumentException(
-                                    "Attempted to register a child that already exists??")
+                                "Attempted to register a child that already exists??"
+                            )
                         }
                     }
                     p = child
@@ -121,6 +143,9 @@ open class CommandExecutor(private val prefix: String,
         }
     }
 
+    /**
+     * Attempts to execute any command registered in the given [message]
+     */
     fun execute(message: Message) {
         var raw = message.contentRaw
         if (raw.isEmpty())
@@ -149,7 +174,8 @@ open class CommandExecutor(private val prefix: String,
         }
 
         raw = if (isMention) raw.replace(Regex("^<@!?$botId>\\s?"), "") else raw.substring(
-                prefix.length)
+            prefix.length
+        )
         val parts = raw.split(" ")
         if (parts.isEmpty())
             return
@@ -164,14 +190,17 @@ open class CommandExecutor(private val prefix: String,
             return
         }
 
-        val userClearance = if (message.channelType == ChannelType.PRIVATE) 0 else this.clearanceResolver.resolve(
-                message.member!!)
+        val userClearance =
+            if (message.channelType == ChannelType.PRIVATE) 0 else this.clearanceResolver.resolve(
+                message.member!!
+            )
         val metadata = resolved.metadata
 
         if (userClearance < metadata.clearance) {
             if (alertNoClearance)
                 message.channel.sendMessage(
-                        ":lock: You do not have permission to perform this command").queue()
+                    ":lock: You do not have permission to perform this command"
+                ).queue()
             return
         }
 
@@ -184,8 +213,12 @@ open class CommandExecutor(private val prefix: String,
             message.channel.sendMessage(buildString {
                 appendln(":no_entry: ${e.message ?: "An unknown error occurred"}")
                 appendln(
-                        "Usage: `${prefix}${resolved.metadata.name} ${resolved.metadata.arguments.joinToString(
-                                " ")}`")
+                    "Usage: `${prefix}${resolved.metadata.name} ${
+                        resolved.metadata.arguments.joinToString(
+                            " "
+                        )
+                    }`"
+                )
             }).queue()
             return
         }
@@ -205,11 +238,18 @@ open class CommandExecutor(private val prefix: String,
                 }
             }
             if (missingPerms.isNotEmpty()) {
-                if (message.guild.selfMember.hasPermission(message.textChannel,
-                                Permission.MESSAGE_SEND))
+                if (message.guild.selfMember.hasPermission(
+                        message.textChannel,
+                        Permission.MESSAGE_SEND
+                    )
+                )
                     message.channel.sendMessage(
-                            ":no_entry: I am missing the following permissions: `${missingPerms.joinToString(
-                                    ", ") { it.getName() }}").queue()
+                        ":no_entry: I am missing the following permissions: `${
+                            missingPerms.joinToString(
+                                ", "
+                            ) { it.getName() }
+                        }"
+                    ).queue()
                 return
             }
         }
@@ -237,8 +277,10 @@ open class CommandExecutor(private val prefix: String,
      * @return The command node of the command or null if the command was not found
      */
     @JvmOverloads
-    tailrec fun resolve(arguments: LinkedList<String>,
-                        parent: CommandNode = parentNode): CommandNode? {
+    tailrec fun resolve(
+        arguments: LinkedList<String>,
+        parent: CommandNode = parentNode
+    ): CommandNode? {
         if (arguments.peek() == null) {
             if (parent == parentNode)
                 return null
@@ -321,16 +363,22 @@ open class CommandExecutor(private val prefix: String,
      * @param path The current command path
      */
     @JvmOverloads
-    fun getHelp(member: Member? = null, node: CommandNode = parentNode,
-                path: String = ""): List<HelpEntry> {
+    fun getHelp(
+        member: Member? = null, node: CommandNode = parentNode,
+        path: String = ""
+    ): List<HelpEntry> {
         val entries = mutableListOf<HelpEntry>()
         node.getChildren().forEach { child ->
             if (child is ResolvedCommandNode) {
                 val metadata = child.metadata
                 if (member == null || metadata.clearance <= clearanceResolver.resolve(member)) {
                     if (!metadata.hidden)
-                        entries.add(HelpEntry(path + " " + child.getName(), metadata.arguments,
-                                metadata.arguments.joinToString(" "), metadata.help))
+                        entries.add(
+                            HelpEntry(
+                                path + " " + child.getName(), metadata.arguments,
+                                metadata.arguments.joinToString(" "), metadata.help
+                            )
+                        )
                 }
             }
             entries.addAll(getHelp(member, child, path + " " + child.getName()))
@@ -376,7 +424,8 @@ open class CommandExecutor(private val prefix: String,
                         return@addKContextResolver matcher.group()
                     } catch (e: IllegalStateException) {
                         throw ArgumentParseException(
-                                "Could not convert `$first` to `snowflake`")
+                            "Could not convert `$first` to `snowflake`"
+                        )
                     }
                 }
             }
@@ -387,7 +436,7 @@ open class CommandExecutor(private val prefix: String,
         addKContextResolver("user") { args ->
             val m = args.peek()
             val id = getContextResolver("snowflake")?.resolve(args) as? String
-                    ?: throw ArgumentParseException("Could not convert `$m` to `user`")
+                ?: throw ArgumentParseException("Could not convert `$m` to `user`")
 
             when {
                 shardManager != null -> shardManager.getUserById(id)
@@ -398,12 +447,13 @@ open class CommandExecutor(private val prefix: String,
         addKContextResolver("number") { args ->
             val num = args.pop()
             num.toDoubleOrNull() ?: throw ArgumentParseException(
-                    "Could not convert `$num` to `number`")
+                "Could not convert `$num` to `number`"
+            )
         }
         addKContextResolver("int") { args ->
             val m = args.peek()
             (getContextResolver("number")?.resolve(args) as? Double)?.roundToInt()
-                    ?: throw ArgumentParseException("Could not convert `$m` to `int`")
+                ?: throw ArgumentParseException("Could not convert `$m` to `int`")
         }
     }
 
@@ -427,14 +477,30 @@ open class CommandExecutor(private val prefix: String,
     /**
      * Metadata about commands
      */
-    data class CommandMetadata(val name: String, val clearance: Int,
-                               val arguments: List<String>,
-                               val hidden: Boolean, val help: String,
-                               val permissions: Array<Permission>)
+    data class CommandMetadata(
+        val name: String, val clearance: Int,
+        val arguments: List<String>,
+        val hidden: Boolean, val help: String,
+        val permissions: Array<Permission>
+    )
 
+    /**
+     * Mention mode of the command executor
+     */
     enum class MentionMode {
+        /**
+         * The bot will not respond to mentions, only its configured prefix
+         */
         DISABLED,
+
+        /**
+         * The bot will either respond to its prefix or to a mention
+         */
         OPTIONAL,
+
+        /**
+         * The bot's prefix is ignored and only mentions will be responded to
+         */
         REQUIRED
     }
 }

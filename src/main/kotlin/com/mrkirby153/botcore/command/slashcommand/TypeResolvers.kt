@@ -115,6 +115,9 @@ val MENTIONABLE_TYPE_RESOLVER = TypeResolver(OptionType.MENTIONABLE) { it, _ ->
     return@TypeResolver it.asMentionable
 }
 
+/**
+ * The type resolver for resolving [Enum]
+ */
 val ENUM_TYPE_RESOLVER = TypeResolver(OptionType.STRING, optionResolver = { type ->
     (type as Class<Enum<*>>).enumConstants.associateBy({ it.name }, { enum ->
         enum.name.split("_").joinToString(" ") { str ->
@@ -132,6 +135,9 @@ val ENUM_TYPE_RESOLVER = TypeResolver(OptionType.STRING, optionResolver = { type
         ?: throw TypeResolutionException("Parameter must be one of $names")
 }
 
+/**
+ * THe type resolver for resolving uploaded files
+ */
 val FILE_TYPE_RESOLVER = TypeResolver(OptionType.ATTACHMENT) { it, _ ->
     return@TypeResolver it.asAttachment
 }

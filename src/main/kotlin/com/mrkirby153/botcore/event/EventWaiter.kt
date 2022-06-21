@@ -11,6 +11,8 @@ import java.util.function.Predicate
 
 /**
  * Handles waiting for an [Event] from discord
+ *
+ * @param pool The thread pool to use when waiting for events
  */
 class EventWaiter(
         private val pool: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()) :

@@ -9,16 +9,42 @@ import net.dv8tion.jda.api.entities.Role
 import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.utils.MarkdownSanitizer
 
+/**
+ * Marker annotation for the Messasge DSL
+ */
 @DslMarker
 annotation class MessageDsl
 
+/**
+ * Builds a [Message]
+ *
+ * @return A [Message]
+ */
 fun message(builder: MessageBuilder.() -> Unit) = MessageBuilder().apply(builder).build()
 
+/**
+ * A [Message] builder
+ */
 @MessageDsl
 class MessageBuilder : Builder<Message> {
+    /**
+     * If this message should be spoken aloud
+     */
     var tts = false
+
+    /**
+     * The content of this message
+     */
     var content = ""
+
+    /**
+     * The embeds in this message
+     */
     val embeds = mutableListOf<EmbedBuilder>()
+
+    /**
+     * The message's action rows
+     */
     val actionRows = mutableListOf<ActionRowBuilder>()
 
     private val mentions = mutableListOf<IMentionable>()
@@ -35,6 +61,11 @@ class MessageBuilder : Builder<Message> {
         return jdaMessageBuilder.build()
     }
 
+    /**
+     * Adds the provided [mentionable] to the message's mentions.
+     *
+     * By default, the allow_mentions will be modified, but this can be disabled with [modifyAllowMentions]
+     */
     fun mention(mentionable: IMentionable, modifyAllowMentions: Boolean = true) {
         if (modifyAllowMentions) {
             when (mentionable) {
@@ -47,32 +78,57 @@ class MessageBuilder : Builder<Message> {
         mentions.add(mentionable)
     }
 
+    /**
+     * Adds the given [type] to the allow_mentions list
+     */
     fun allowMention(type: MentionType) {
         allowMentions.add(type)
     }
 
+    /**
+     * Removes the given [type] from the allow_mentions list
+     */
     fun denyMention(type: MentionType) {
         allowMentions.remove(type)
     }
 
+    /**
+     * Sets the message's content.
+     *
+     * Specify [safe] to automatically escape markdown in the message (Default behavior)
+     */
     inline fun text(safe: Boolean = true, builder: MessageContentBuilder.() -> Unit) {
         this.content = MessageContentBuilder(safe).apply(builder).build()
     }
 
+    /**
+     * Adds an embed to the message
+     */
     inline fun embed(builder: EmbedBuilder.() -> Unit) {
         embeds.add(EmbedBuilder().apply(builder))
     }
 
+    /**
+     * Adds an action row to the message
+     */
     inline fun actionRow(builder: ActionRowBuilder.() -> Unit) {
         actionRows.add(ActionRowBuilder().apply(builder))
     }
 }
 
+/**
+ * Builder for a [Message]'s content
+ *
+ * @param safe If markdown should be escaped
+ */
 @MessageDsl
 class MessageContentBuilder(private val safe: Boolean) : Builder<String> {
 
     private val stringBuilder = StringBuilder()
 
+    /**
+     * Appends the bold [message] to the message
+     */
     fun bold(message: String) {
         appendMarkdown(
             "**", if (safe) {
@@ -83,6 +139,9 @@ class MessageContentBuilder(private val safe: Boolean) : Builder<String> {
         )
     }
 
+    /**
+     * Appends the italic [message] to the message
+     */
     fun italic(message: String) {
         appendMarkdown(
             "*", if (safe) {
@@ -93,6 +152,9 @@ class MessageContentBuilder(private val safe: Boolean) : Builder<String> {
         )
     }
 
+    /**
+     * Appends the underline [message] to the message
+     */
     fun underline(message: String) {
         appendMarkdown(
             "__", if (safe) {
@@ -103,6 +165,9 @@ class MessageContentBuilder(private val safe: Boolean) : Builder<String> {
         )
     }
 
+    /**
+     * Appends an inline code block of [message] to the message
+     */
     fun appendBlock(message: String) {
         appendMarkdown(
             "`", if (safe) {
@@ -113,6 +178,9 @@ class MessageContentBuilder(private val safe: Boolean) : Builder<String> {
         )
     }
 
+    /**
+     * Appends the raw [message] to the message
+     */
     fun append(message: String) {
         stringBuilder.append(
             if (safe) {
@@ -123,6 +191,9 @@ class MessageContentBuilder(private val safe: Boolean) : Builder<String> {
         )
     }
 
+    /**
+     * Appends the raw [message] to the message, with a newline
+     */
     fun appendLine(message: String = "") {
         stringBuilder.appendLine(
             if (safe) {
@@ -133,6 +204,9 @@ class MessageContentBuilder(private val safe: Boolean) : Builder<String> {
         )
     }
 
+    /**
+     * Appends a code block in the provided [language] to the message
+     */
     fun code(text: String, language: String = "") {
         stringBuilder.append("```$language\n$text\n```")
     }

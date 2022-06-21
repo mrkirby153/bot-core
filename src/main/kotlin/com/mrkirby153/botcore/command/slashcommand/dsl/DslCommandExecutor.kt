@@ -21,6 +21,17 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData
 import net.dv8tion.jda.api.interactions.commands.context.ContextInteraction
 import java.util.concurrent.CompletableFuture
 
+/**
+ * Command executor for Kotlin based DSL slash commands.
+ *
+ * Use [slashCommand] to create slash commands, [messageContextCommand] to create message context
+ * commands, and [userContextCommands] to create user context commands.
+ *
+ * Slash, message, and user context commands that are declared in [registerCommands] are
+ * automatically added to the executor.
+ *
+ * **Note:** The executor must be registered as an event listener with JDA
+ */
 class DslCommandExecutor : ListenerAdapter() {
 
     private val registeredCommands = mutableMapOf<String, SlashCommand<out Arguments>>()
@@ -122,12 +133,24 @@ class DslCommandExecutor : ListenerAdapter() {
         return commands
     }
 
+    /**
+     * Commits all the slash commands currently registered to Discord.
+     *
+     * @param jda The JDA instance to use to commit
+     * @return A [CompletableFuture] completed with the [Commands][Command] that wer committed to Discord
+     */
     fun commit(jda: JDA): CompletableFuture<MutableList<Command>> {
         val commands = buildCommandData()
         log.debug("Committing {} commands globally", commands.size)
         return jda.updateCommands().addCommands(commands).submit()
     }
 
+    /**
+     * Commits all the slash commands currently registered to the provided [guilds].
+     *
+     * @param jda The JDA instance to use during commit
+     * @return A [CompletableFuture] completed when the commands have been committed to all guilds
+     */
     fun commit(jda: JDA, vararg guilds: String): CompletableFuture<Void> {
         val commands = buildCommandData()
         log.debug("Committing {} commands to the following guilds: {}", commands.size, guilds)
@@ -136,6 +159,9 @@ class DslCommandExecutor : ListenerAdapter() {
         return CompletableFuture.allOf(*futures.toTypedArray())
     }
 
+    /**
+     * Executes a slash command from the provided [event]
+     */
     fun execute(event: SlashCommandInteractionEvent) {
         val cmd = getSlashCommand(event) ?: return
         log.trace("Executing slash command ${event.commandPath}")
@@ -159,6 +185,9 @@ class DslCommandExecutor : ListenerAdapter() {
         }
     }
 
+    /**
+     * Handle an autocompletion [event] and return the results to the user
+     */
     fun handleAutocomplete(event: CommandAutoCompleteInteractionEvent) {
         val cmd = getSlashCommand(event) ?: return
         log.trace("Handling autocomplete for {}", event.commandPath)
@@ -167,6 +196,11 @@ class DslCommandExecutor : ListenerAdapter() {
         event.replyChoices(options).queue()
     }
 
+    /**
+     * Register the provided [commands] with this executor
+     *
+     * @see SlashCommand
+     */
     fun register(vararg commands: SlashCommand<out Arguments>) {
         commands.forEach { command ->
             log.trace("Registering command {}", command.name)
@@ -174,6 +208,13 @@ class DslCommandExecutor : ListenerAdapter() {
         }
     }
 
+    /**
+     * Register the provided commands with this executor
+     *
+     * @param commands A list of context commands to register
+     * @see UserContextCommand
+     * @see MessageContextCommand
+     */
     fun register(vararg commands: ContextCommand<out ContextInteraction<*>>) {
         commands.forEach {
             log.trace("Registering context command {}", it.name)
@@ -184,6 +225,10 @@ class DslCommandExecutor : ListenerAdapter() {
         }
     }
 
+    /**
+     * Convenience function for registering commands. All commands that are declared in this
+     * block are automatically registered with this executor
+     */
     fun registerCommands(body: DslCommandExecutor.() -> Unit) {
         body(this)
     }

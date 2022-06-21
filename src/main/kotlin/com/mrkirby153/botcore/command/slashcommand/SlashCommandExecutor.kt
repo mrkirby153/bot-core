@@ -38,7 +38,13 @@ private val DEFAULT_CLEARANCE_RESOLVER = object : ClearanceResolver {
 
 }
 
+/**
+ * A slash command executor
+ */
 class SlashCommandExecutor(
+    /**
+     * The clearance resolver used to determine command clearances
+     */
     private val clearanceResolver: ClearanceResolver = DEFAULT_CLEARANCE_RESOLVER
 ) {
 
@@ -363,7 +369,9 @@ class SlashCommandExecutor(
 
     /**
      * Executes the provided [event]'s slash command if this executor is able (A command exists in
-     * its tree). Returns true if this executor was able to execute the slash command
+     * its tree).
+     *
+     * @return  True if this executor was able to execute the slash command
      */
     fun executeSlashCommandIfAble(event: SlashCommandInteractionEvent): Boolean {
         return if (canExecute(event)) {
@@ -374,6 +382,11 @@ class SlashCommandExecutor(
         }
     }
 
+    /**
+     * Executes the provided [event]'s context command if this executor is able.
+     *
+     * @return True if this executor was able to execute this context command
+     */
     fun executeContextInteraction(event: GenericContextInteractionEvent<*>): Boolean {
         val toConsider = when (event) {
             is MessageContextInteractionEvent -> {
@@ -490,6 +503,9 @@ class SlashCommandExecutor(
         }
     }
 
+    /**
+     * Handles autocompletion for slash commands registered in this executor
+     */
     fun handleAutocomplete(event: CommandAutoCompleteInteractionEvent) {
         val command = getCommandName(event)
         val node = resolveNode(command, false) ?: return

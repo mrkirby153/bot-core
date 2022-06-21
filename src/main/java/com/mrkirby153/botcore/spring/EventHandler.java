@@ -8,12 +8,20 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import javax.annotation.Nonnull;
 
+/**
+ * Event handler to dispatch JDA events into the Spring event publisher
+ */
 class EventHandler implements EventListener {
 
     private static final Logger log = LoggerFactory.getLogger(EventHandler.class);
 
     private final ApplicationEventPublisher eventPublisher;
 
+    /**
+     * Constructs a new event handler
+     *
+     * @param eventPublisher The publisher to publish events on
+     */
     public EventHandler(ApplicationEventPublisher eventPublisher) {
         this.eventPublisher = eventPublisher;
     }

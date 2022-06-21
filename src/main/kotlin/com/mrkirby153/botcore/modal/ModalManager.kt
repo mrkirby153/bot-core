@@ -1,15 +1,25 @@
 package com.mrkirby153.botcore.modal
 
 import com.mrkirby153.botcore.builder.ModalBuilder
+import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.interactions.components.Modal
+import net.dv8tion.jda.api.sharding.ShardManager
 import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.TimeUnit
 
+/**
+ * Manager for interaction modals. The manager must be registered with a [JDA] or [ShardManager]
+ * instance to function correctly
+ *
+ * @param threadFactory The factory to use when spawning the GC pool
+ * @param gcPeriod The period over which the manager garbage collects
+ * @param gcUnits The time unit of the garbage collection period
+ */
 class ModalManager(
     threadFactory: ThreadFactory? = null,
     gcPeriod: Long = 1,
@@ -33,6 +43,12 @@ class ModalManager(
 
     private val registeredModals = CopyOnWriteArrayList<RegisteredModal>()
 
+    /**
+     * Registers the given [modal] with the manager. The modal will automatically be garbage
+     * collected and will no longer respond after [timeout]. Specify the units using [timeUnit].
+     *
+     * The default garbage collection timeout is 5 minutes
+     */
     @JvmOverloads
     fun register(modal: ModalBuilder, timeout: Long = 5, timeUnit: TimeUnit = TimeUnit.MINUTES) {
         val timeoutMs =
@@ -49,6 +65,10 @@ class ModalManager(
         )
     }
 
+    /**
+     * Builds and registers a modal with the modal manager. The modal will automatically time
+     * out after the provided [timeout]
+     */
     fun build(
         timeout: Long = 5,
         timeUnit: TimeUnit = TimeUnit.MINUTES,

@@ -23,6 +23,10 @@ import org.springframework.context.event.EventListener;
 import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
 
+/**
+ * Automatically sets up a {@link ShardManager} configured with a bot token. The bot will automatically
+ * fire a {@link BotReadyEvent} when the bot has logged in completely
+ */
 @ConditionalOnProperty("bot.token")
 @Configuration
 public class JDAAutoConfiguration {
@@ -36,6 +40,13 @@ public class JDAAutoConfiguration {
     private boolean applicationReady = false;
     private boolean botReady = false;
 
+    /**
+     * Constructs a new configuration bean
+     *
+     * @param token          The bot token. Injected from {@code bot.token}
+     * @param eventRelay     If events from JDA should automatically be relayed to Spring's event bus. Injected from {@code bot.event.relay}, defaults to true
+     * @param eventPublisher The event bus publisher to relay events to
+     */
     public JDAAutoConfiguration(@Value("${bot.token}") String token,
         @Value("${bot.event.relay:true}") boolean eventRelay,
         ApplicationEventPublisher eventPublisher) {
@@ -44,12 +55,29 @@ public class JDAAutoConfiguration {
         this.eventPublisher = eventPublisher;
     }
 
+    /**
+     * Bean for a shard manager builder
+     *
+     * @return The shard manager
+     */
     @Bean
     @ConditionalOnMissingBean
     public DefaultShardManagerBuilder defaultShardManagerBuilder() {
         return DefaultShardManagerBuilder.createDefault(token);
     }
 
+    /**
+     * Bean creating a {@link ShardManager}. While shards start up, the bot will automatically
+     * set its status to "idle" and a playing status of "Starting up...". Once the bot has loaded
+     * it will switch itself to "online" and remove its playing status
+     *
+     * @param defaultShardManagerBuilder The builder to use when creating the shard manager
+     * @param eventHandler               The event handler to relay events on, if enabled
+     *
+     * @return The shard manager
+     *
+     * @throws LoginException If there was an error logging in
+     */
     @Bean(name = "shardManager")
     @ConditionalOnMissingBean
     public ShardManager shardManager(DefaultShardManagerBuilder defaultShardManagerBuilder,
@@ -66,6 +94,11 @@ public class JDAAutoConfiguration {
         return manager;
     }
 
+    /**
+     * Bean for the JDA -> Spring event bus
+     *
+     * @return The Event Handler
+     */
     @Bean(name = "jdaEventHandler")
     @ConditionalOnMissingBean
     public EventHandler jdaEventHandler() {

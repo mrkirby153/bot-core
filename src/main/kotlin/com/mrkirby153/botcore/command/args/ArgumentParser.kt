@@ -5,19 +5,23 @@ import java.util.LinkedList
 
 /**
  * Parse a list of arguments
+ *
+ * @param arguments The list of parameters to parse
+ * @param argumentTypes The types of the arguments
+ * @param executor The [CommandExecutor] that's currently executing the command
  */
 class ArgumentParser(private val arguments: Array<String>, private val argumentTypes: Array<String>,
                      private val executor: CommandExecutor) {
 
     /**
-     * Parse the arguments
+     * Parse the arguments and returns a [CommandContext]
      */
     fun parse(): CommandContext {
         val argList = LinkedList<String>()
         arguments.forEach { argList.add(it) }
         val context = CommandContext()
 
-        for (i in 0 until argumentTypes.size) {
+        for (i in argumentTypes.indices) {
             var argument = argumentTypes[i]
             val argType = ArgType.determine(argument)
             argument = argument.replace(Regex("<|>|\\[|]"), "")
