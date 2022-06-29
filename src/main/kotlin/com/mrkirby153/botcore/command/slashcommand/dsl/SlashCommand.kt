@@ -5,7 +5,7 @@ import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.Command
-import net.dv8tion.jda.api.interactions.commands.CommandPermissions
+import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions
 
 
 /**
@@ -82,7 +82,7 @@ class SlashCommand<A : Arguments>(
 
     val subCommands = mutableMapOf<String, SubCommand<*>>()
     val groups = mutableMapOf<String, Group>()
-    internal var commandPermissions = CommandPermissions.ENABLED
+    internal var commandPermissions = DefaultMemberPermissions.ENABLED
 
     /**
      * Defines the action run when this slash command is invoked
@@ -110,14 +110,14 @@ class SlashCommand<A : Arguments>(
      * If a user does not have these permissions, the command will not show in the client.
      */
     fun defaultPermissions(vararg permissions: Permission) {
-        commandPermissions = CommandPermissions.enabledFor(*permissions)
+        commandPermissions = DefaultMemberPermissions.enabledFor(*permissions)
     }
 
     /**
      * Disable this command by default. Server administrators will need to enable it manually
      */
     fun disabledByDefault() {
-        commandPermissions = CommandPermissions.DISABLED
+        commandPermissions = DefaultMemberPermissions.DISABLED
     }
 
 }

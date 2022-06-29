@@ -1,12 +1,12 @@
 package com.mrkirby153.botcore.builder
 
 import net.dv8tion.jda.api.entities.Channel
-import net.dv8tion.jda.api.entities.Emote
 import net.dv8tion.jda.api.entities.IMentionable
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.Message.MentionType
 import net.dv8tion.jda.api.entities.Role
 import net.dv8tion.jda.api.entities.User
+import net.dv8tion.jda.api.entities.emoji.CustomEmoji
 import net.dv8tion.jda.api.utils.MarkdownSanitizer
 
 /**
@@ -72,7 +72,7 @@ class MessageBuilder : Builder<Message> {
                 is User -> allowMentions.add(MentionType.USER)
                 is Role -> allowMentions.add(MentionType.ROLE)
                 is Channel -> allowMentions.add(MentionType.CHANNEL)
-                is Emote -> allowMentions.add(MentionType.EMOTE)
+                is CustomEmoji -> allowMentions.add(MentionType.EMOJI)
             }
         }
         mentions.add(mentionable)
