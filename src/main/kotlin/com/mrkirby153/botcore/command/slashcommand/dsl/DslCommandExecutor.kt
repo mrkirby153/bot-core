@@ -7,6 +7,7 @@ import com.mrkirby153.botcore.command.slashcommand.dsl.types.IArgBuilder
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.ModifiesOption
 import com.mrkirby153.botcore.log
 import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent

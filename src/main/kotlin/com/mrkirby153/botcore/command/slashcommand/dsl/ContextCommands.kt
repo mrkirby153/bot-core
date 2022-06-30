@@ -1,5 +1,6 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl
 
+import com.mrkirby153.botcore.utils.PrerequisiteCheck
 import net.dv8tion.jda.api.interactions.commands.context.ContextInteraction
 
 /**
@@ -15,6 +16,8 @@ open class ContextCommand<Event : ContextInteraction<*>> {
     lateinit var name: String
     private lateinit var commandAction: (Event) -> Unit
 
+    private val checks = mutableListOf<PrerequisiteCheck<Event>.() -> Unit>()
+
     /**
      * If this command should be enabled by default
      */
@@ -28,9 +31,25 @@ open class ContextCommand<Event : ContextInteraction<*>> {
     }
 
     /**
+     * Adds a new prerequisite check to this context command
+     */
+    fun check(builder: PrerequisiteCheck<Event>.() -> Unit) {
+        this.checks.add(builder)
+    }
+
+    /**
      * Executes this command with the provided [event]
      */
     fun execute(event: Event) {
+        val checkCtx = PrerequisiteCheck(event)
+        checks.forEach {
+            it(checkCtx)
+            if (checkCtx.failed) {
+                event.reply(":no_entry: ${checkCtx.failureMessage ?: "A required prerequisite was not fulfilled"}")
+                    .setEphemeral(true).queue()
+                return
+            }
+        }
         try {
             commandAction(event)
         } catch (e: Exception) {

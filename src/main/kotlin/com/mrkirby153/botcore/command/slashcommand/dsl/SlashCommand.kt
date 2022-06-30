@@ -1,6 +1,8 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl
 
+import com.mrkirby153.botcore.command.CommandException
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.AutocompleteEligible
+import com.mrkirby153.botcore.utils.PrerequisiteCheck
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
@@ -28,6 +30,17 @@ open class AbstractSlashCommand<A : Arguments>(
     lateinit var name: String
     lateinit var description: String
 
+    private val checks = mutableListOf<PrerequisiteCheck<SlashContext<A>>.() -> Unit>()
+
+    /**
+     * Adds a prerequisite check to this slash command. This check is run before the command is
+     * executed. To prevent the command from running and optionally display a message to the user
+     * invoke [PrerequisiteCheck.fail] from inside the check
+     */
+    fun check(builder: PrerequisiteCheck<SlashContext<A>>.() -> Unit) {
+        checks.add(builder)
+    }
+
     /**
      * Returns a new instance of the arguments class
      */
@@ -39,6 +52,16 @@ open class AbstractSlashCommand<A : Arguments>(
     fun execute(event: SlashCommandInteractionEvent) {
         val ctx = SlashContext(this, event)
         ctx.load()
+        val checkCtx = PrerequisiteCheck(ctx)
+        checks.forEach {
+            it(checkCtx)
+            if (checkCtx.failed) {
+                return@forEach
+            }
+        }
+        if (checkCtx.failed) {
+            throw CommandException(checkCtx.failureMessage ?: "Command prerequisites did not pass")
+        }
         body?.invoke(ctx)
     }
 
