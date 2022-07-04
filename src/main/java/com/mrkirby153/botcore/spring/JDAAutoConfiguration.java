@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import org.slf4j.Logger;
@@ -20,6 +21,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
 
@@ -33,9 +41,15 @@ public class JDAAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(JDAAutoConfiguration.class);
 
+    private static final Pattern rangePattern = Pattern.compile("(\\d+)\\.\\.(\\d+)");
+
     private final String token;
     private final boolean eventRelay;
     private final ApplicationEventPublisher eventPublisher;
+
+    private final int totalShards;
+    private final String[] shards;
+    private final String[] extraIntents;
 
     private boolean applicationReady = false;
     private boolean botReady = false;
@@ -45,14 +59,23 @@ public class JDAAutoConfiguration {
      *
      * @param token          The bot token. Injected from {@code bot.token}
      * @param eventRelay     If events from JDA should automatically be relayed to Spring's event bus. Injected from {@code bot.event.relay}, defaults to true
+     * @param shards         The shard ids to start. Injected from {@code bot.shards.shards}, defaults to an empty string
+     * @param totalShards    The total number of shards to start. Injected from {@code bot.shards.total}, defaults to -1 (Discord recommended)
+     * @param intents        Additional intents to enable. Injected from {@code bot.extra-intents}, defaults to an empty string (No additional intents)
      * @param eventPublisher The event bus publisher to relay events to
      */
     public JDAAutoConfiguration(@Value("${bot.token}") String token,
         @Value("${bot.event.relay:true}") boolean eventRelay,
+        @Value("${bot.shards.shards:}") String[] shards,
+        @Value("${bot.shards.total:-1}") int totalShards,
+        @Value("${bot.extra-intents:}") String[] intents,
         ApplicationEventPublisher eventPublisher) {
         this.token = token;
         this.eventRelay = eventRelay;
         this.eventPublisher = eventPublisher;
+        this.shards = shards;
+        this.extraIntents = intents;
+        this.totalShards = totalShards;
     }
 
     /**
@@ -63,7 +86,16 @@ public class JDAAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public DefaultShardManagerBuilder defaultShardManagerBuilder() {
-        return DefaultShardManagerBuilder.createDefault(token);
+        List<Integer> shards = getShardIds();
+        List<GatewayIntent> extraIntents = getExtraIntents();
+        log.info(
+            "Initializing a DefaultShardManagerBuilder with the shards [{}] of {} and enabling additional intents: [{}]",
+            totalShards == -1 ? "auto" : shards.stream().map(Object::toString).collect(
+                Collectors.joining(",")), totalShards == -1 ? "auto" : totalShards,
+            extraIntents.stream().map(Objects::toString).collect(
+                Collectors.joining(",")));
+        return DefaultShardManagerBuilder.createDefault(token).setShardsTotal(totalShards)
+            .setShards(shards).enableIntents(getExtraIntents());
     }
 
     /**
@@ -123,21 +155,68 @@ public class JDAAutoConfiguration {
         }
     }
 
-    private void handleShardReady(ShardManager shardManager) {
+    private void handleShardReady(ShardManager shardManager, ShardReadyListener listener) {
         log.debug("Handling shard ready event");
-        long totalShards = shardManager.getShardsTotal();
+        long totalShards = shardManager.getShards().size();
         long readyShards = shardManager.getShards().stream()
             .filter(jda -> jda.getStatus() == Status.CONNECTED).count() + 1;
         if (totalShards == readyShards) {
             log.info("All shards ready!");
-            log.info("Is application ready? {}", this.applicationReady);
+            log.debug("Is application ready? {}", this.applicationReady);
             shardManager.setStatus(OnlineStatus.ONLINE);
             shardManager.setActivity(null);
             botReady = true;
             dispatchReadyEvent();
+            shardManager.removeEventListener(listener);
         } else {
             log.info("{}/{} shards ready", readyShards, totalShards);
         }
+    }
+
+    private List<Integer> getShardIds() {
+        if (shards.length == 1 && shards[0].equals("auto")) {
+            return Collections.emptyList();
+        }
+        List<Integer> shardIds = new ArrayList<>();
+        for (String shard : shards) {
+            Matcher m = rangePattern.matcher(shard);
+            if (m.find()) {
+                try {
+                    int start = Integer.parseInt(m.group(1));
+                    int end = Integer.parseInt(m.group(2));
+                    if (start > end) {
+                        throw new IllegalArgumentException("Provided range " + shard
+                            + " is not valid. Range must be strictly ascending");
+                    }
+                    for (int i = start; i <= end; i++) {
+                        shardIds.add(i);
+                    }
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("Provided range " + shard + " is not valid");
+                }
+            } else {
+                try {
+                    shardIds.add(Integer.parseInt(shard));
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException(
+                        "Provided shard id " + shard + " is not a number or range");
+                }
+            }
+        }
+        return shardIds;
+    }
+
+    private List<GatewayIntent> getExtraIntents() {
+        List<GatewayIntent> intents = new ArrayList<>();
+        for (String intent : extraIntents) {
+            try {
+                intents.add(GatewayIntent.valueOf(intent));
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException(
+                    "Provided intent " + intent + " is not a valid intent");
+            }
+        }
+        return intents;
     }
 
     private class ShardReadyListener extends ListenerAdapter {
@@ -153,11 +232,7 @@ public class JDAAutoConfiguration {
             log.info("Shard {} has logged in as {}#{}", event.getJDA().getShardInfo().getShardId(),
                 event.getJDA().getSelfUser().getName(),
                 event.getJDA().getSelfUser().getDiscriminator());
-            ShardManager sm = event.getJDA().getShardManager();
-            if (sm != null) {
-                sm.removeEventListener(this);
-            }
-            handleShardReady(this.shardManager);
+            handleShardReady(this.shardManager, this);
         }
     }
 }
