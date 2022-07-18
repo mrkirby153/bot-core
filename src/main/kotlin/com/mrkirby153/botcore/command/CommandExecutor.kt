@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.ChannelType
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Message
+import net.dv8tion.jda.api.entities.TextChannel
 import net.dv8tion.jda.api.sharding.ShardManager
 import java.lang.reflect.InvocationTargetException
 import java.util.LinkedList
@@ -233,13 +234,13 @@ open class CommandExecutor(
             // Check permissions
             val missingPerms = mutableListOf<Permission>()
             resolved.metadata.permissions.forEach { permission ->
-                if (!message.guild.selfMember.hasPermission(message.textChannel, permission)) {
+                if (!message.guild.selfMember.hasPermission(message.channel.asTextChannel(), permission)) {
                     missingPerms.add(permission)
                 }
             }
             if (missingPerms.isNotEmpty()) {
                 if (message.guild.selfMember.hasPermission(
-                        message.textChannel,
+                        message.channel as TextChannel,
                         Permission.MESSAGE_SEND
                     )
                 )

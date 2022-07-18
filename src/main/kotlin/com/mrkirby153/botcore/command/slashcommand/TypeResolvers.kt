@@ -84,21 +84,21 @@ val USER_TYPE_RESOLVER = TypeResolver(OptionType.USER) { it, _ ->
  * The type resolver for resolving [TextChannel]
  */
 val TEXT_CHANNEL_TYPE_RESOLVER = TypeResolver(OptionType.CHANNEL) { it, _ ->
-    return@TypeResolver resolveChannel<TextChannel>(it.asGuildChannel, "Text Channel")
+    return@TypeResolver resolveChannel<TextChannel>(it.asChannel.asTextChannel(), "Text Channel")
 }
 
 /**
  * The type resolver for resolving [VoiceChannel]
  */
 val VOICE_CHANNEL_TYPE_RESOLVER = TypeResolver(OptionType.CHANNEL) { it, _ ->
-    return@TypeResolver resolveChannel<VoiceChannel>(it.asGuildChannel, "Voice Channel")
+    return@TypeResolver resolveChannel<VoiceChannel>(it.asChannel.asVoiceChannel(), "Voice Channel")
 }
 
 /**
  * The type resolver for resolving [Category]
  */
 val CATEGORY_TYPE_RESOLVER = TypeResolver(OptionType.MENTIONABLE) { it, _ ->
-    return@TypeResolver resolveChannel<Category>(it.asGuildChannel, "Category")
+    return@TypeResolver resolveChannel<Category>(it.asChannel.asCategory(), "Category")
 }
 
 /**

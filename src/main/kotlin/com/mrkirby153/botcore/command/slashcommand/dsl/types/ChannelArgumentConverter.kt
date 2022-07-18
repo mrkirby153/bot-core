@@ -3,11 +3,10 @@ package com.mrkirby153.botcore.command.slashcommand.dsl.types
 import com.mrkirby153.botcore.command.args.ArgumentParseException
 import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentConverter
 import com.mrkirby153.botcore.command.slashcommand.dsl.Arguments
-import com.mrkirby153.botcore.command.slashcommand.dsl.NullableArgument
 import net.dv8tion.jda.api.entities.Channel
 import net.dv8tion.jda.api.entities.ChannelType
 import net.dv8tion.jda.api.entities.GuildChannel
-import net.dv8tion.jda.api.entities.GuildMessageChannel
+import net.dv8tion.jda.api.entities.MessageChannel
 import net.dv8tion.jda.api.entities.StageChannel
 import net.dv8tion.jda.api.entities.TextChannel
 import net.dv8tion.jda.api.entities.ThreadChannel
@@ -46,40 +45,43 @@ open class NullableChannelArgument<T : Channel>(
 
 private val textChannelConverter = {
     ChannelArgumentConverter {
-        it.asTextChannel ?: throw ArgumentParseException("Provided channel was not a text channel")
+        it.asChannel as? TextChannel
+            ?: throw ArgumentParseException("Provided channel was not a text channel")
     }
 }
 
 private val voiceChannelConverter = {
     ChannelArgumentConverter {
-        it.asVoiceChannel
+        it.asChannel as? VoiceChannel
             ?: throw ArgumentParseException("Provided channel was not a voice channel")
     }
 }
 
 private val guildChannelConverter = {
     ChannelArgumentConverter {
-        it.asGuildChannel
+        it.asChannel as? GuildChannel
+            ?: throw ArgumentParseException("Provided channel was not a guild channel")
     }
 }
 
 private val messageChannelConverter = {
     ChannelArgumentConverter {
-        it.asMessageChannel
+        it.asChannel as? MessageChannel
             ?: throw ArgumentParseException("Provided channel was not a message channel")
     }
 }
 
 private val stageChannelConverter = {
     ChannelArgumentConverter {
-        it.asStageChannel
+        it.asChannel as? StageChannel
             ?: throw ArgumentParseException("Provided channel was not a stage channel")
     }
 }
 
 private val threadChannelConverter = {
     ChannelArgumentConverter {
-        it.asThreadChannel ?: throw ArgumentParseException("Provided channel was not a thread")
+        it.asChannel as? ThreadChannel
+            ?: throw ArgumentParseException("Provided channel was not a thread")
     }
 }
 
@@ -112,7 +114,7 @@ class OptionalGuildChannelArgument :
     )
 
 class MessageChannelArgument :
-    ChannelArgument<GuildMessageChannel>(
+    ChannelArgument<MessageChannel>(
         messageChannelConverter,
         ChannelType.TEXT,
         ChannelType.PRIVATE,
@@ -120,7 +122,7 @@ class MessageChannelArgument :
     )
 
 class OptionalMessageChannelArgument :
-    NullableChannelArgument<GuildMessageChannel>(
+    NullableChannelArgument<MessageChannel>(
         messageChannelConverter,
         ChannelType.TEXT,
         ChannelType.PRIVATE,
