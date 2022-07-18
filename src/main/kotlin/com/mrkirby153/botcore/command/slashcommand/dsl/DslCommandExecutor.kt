@@ -5,9 +5,10 @@ import com.mrkirby153.botcore.command.args.BatchArgumentParseException
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.AutocompleteEligible
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.IArgBuilder
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.ModifiesOption
+import com.mrkirby153.botcore.i18n.TranslationProvider
+import com.mrkirby153.botcore.i18n.TranslationProviderLocalizationFunction
 import com.mrkirby153.botcore.log
 import net.dv8tion.jda.api.JDA
-import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
@@ -20,6 +21,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData
 import net.dv8tion.jda.api.interactions.commands.context.ContextInteraction
+import net.dv8tion.jda.api.interactions.commands.localization.LocalizationFunction
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -32,12 +34,24 @@ import java.util.concurrent.CompletableFuture
  * automatically added to the executor.
  *
  * **Note:** The executor must be registered as an event listener with JDA
+ *
+ * @param translationBundle An optional translation bundle to retrieve command localizations from
+ * @param translationProvider An optional translation provider to retrieve command localizations from
  */
-class DslCommandExecutor : ListenerAdapter() {
+class DslCommandExecutor(
+    translationBundle: String? = null,
+    translationProvider: TranslationProvider? = null
+) : ListenerAdapter() {
 
     private val registeredCommands = mutableMapOf<String, SlashCommand<out Arguments>>()
     private val userContextCommands = mutableListOf<UserContextCommand>()
     private val messageContextCommands = mutableListOf<MessageContextCommand>()
+
+    private val localizationFunction: LocalizationFunction? =
+        if (translationProvider != null && translationBundle != null) TranslationProviderLocalizationFunction(
+            translationBundle,
+            translationProvider
+        ) else null
 
     private fun getSlashCommand(event: SlashCommandInteractionEvent): AbstractSlashCommand<*>? {
         val command = registeredCommands[event.name] ?: return null
@@ -89,7 +103,11 @@ class DslCommandExecutor : ListenerAdapter() {
     private fun buildCommandData(): List<CommandData> {
         val commands: MutableList<CommandData> = registeredCommands.map {
             val cmd = it.value
-            val commandData = Commands.slash(cmd.name, cmd.description)
+            val commandData = Commands.slash(cmd.name, cmd.description).apply {
+                if (localizationFunction != null) {
+                    setLocalizationFunction(localizationFunction)
+                }
+            }
             commandData.defaultPermissions = cmd.commandPermissions
             if (cmd.subCommands.isNotEmpty()) {
                 commandData.addSubcommands(cmd.subCommands.map { sub ->
@@ -128,6 +146,10 @@ class DslCommandExecutor : ListenerAdapter() {
                 is UserContextCommand -> Commands.user(cmd.name)
                 is MessageContextCommand -> Commands.message(cmd.name)
                 else -> null
+            }.apply {
+                if (this != null && localizationFunction != null) {
+                    setLocalizationFunction(localizationFunction)
+                }
             }
             c
         })

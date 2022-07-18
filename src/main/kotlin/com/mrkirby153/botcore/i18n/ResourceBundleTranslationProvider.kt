@@ -68,6 +68,7 @@ class ResourceBundleTranslationProvider(
             return existing
         }
         val bundleLocation = if (basePath.isNotBlank()) "$basePath/${bundleName}" else bundleName
+        log.trace("Loading resource bundle from $bundleLocation (locale $locale)")
         return try {
             val bundle = ResourceBundle.getBundle(bundleLocation, locale)
             resourceBundles[mapKey] = bundle
