@@ -107,6 +107,7 @@ class DslCommandExecutor(
                 if (localizationFunction != null) {
                     setLocalizationFunction(localizationFunction)
                 }
+                isGuildOnly = !cmd.availableInDms
             }
             commandData.defaultPermissions = cmd.commandPermissions
             if (cmd.subCommands.isNotEmpty()) {

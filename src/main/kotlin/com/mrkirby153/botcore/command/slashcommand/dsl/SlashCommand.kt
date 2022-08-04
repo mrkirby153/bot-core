@@ -106,6 +106,7 @@ class SlashCommand<A : Arguments>(
     val subCommands = mutableMapOf<String, SubCommand<*>>()
     val groups = mutableMapOf<String, Group>()
     internal var commandPermissions = DefaultMemberPermissions.ENABLED
+    var availableInDms = false
 
     /**
      * Defines the action run when this slash command is invoked
