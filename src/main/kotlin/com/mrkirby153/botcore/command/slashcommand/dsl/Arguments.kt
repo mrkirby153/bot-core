@@ -25,7 +25,7 @@ open class Arguments {
     /**
      * Returns the list of arguments
      */
-    fun get() = arguments.toList()
+    fun get() = arguments.toList().sortedBy { a -> if (a is NullableArgument) 1 else -1 }
 
     /**
      * Gets a specific argument by its [key] ([IArgument.displayName])

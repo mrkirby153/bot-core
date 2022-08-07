@@ -134,7 +134,7 @@ class DslCommandExecutor(
             val args = cmd.args()
             if (args != null) {
                 commandData.addOptions(
-                    args.get().sortedBy { a -> if (a is NullableArgument) -1 else 1 }.map { arg ->
+                    args.get().map { arg ->
                         createOption(arg)
                     })
             }

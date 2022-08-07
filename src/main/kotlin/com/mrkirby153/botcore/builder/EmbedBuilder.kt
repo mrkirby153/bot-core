@@ -124,7 +124,7 @@ class EmbedBuilder : Builder<MessageEmbed> {
         setFooter(footer.text, footer.iconUrl)
 
         setThumbnail(thumbnailBuilder.build())
-        setImage(imageBuilder.build().url)
+        setImage(imageBuilder.build()?.url)
         setColor(colorBuilder.build())
     }.build()
 }
@@ -132,13 +132,13 @@ class EmbedBuilder : Builder<MessageEmbed> {
 /**
  * The builder for an embed's thumbnail
  */
-class ThumbnailBuilder : Builder<String> {
+class ThumbnailBuilder : Builder<String?> {
     /**
      * The URL to show in the thumbnail
      */
     var url = ""
 
-    override fun build() = url
+    override fun build() = url.ifEmpty { null }
 }
 
 /**
@@ -188,7 +188,7 @@ class AuthorBuilder : Builder<AuthorInfo> {
         iconUrl = user.avatarUrl ?: user.defaultAvatarUrl
     }
 
-    override fun build() = AuthorInfo(name, url, iconUrl, null)
+    override fun build() = AuthorInfo(name, url.ifEmpty { null }, iconUrl.ifEmpty { null }, null)
 
 }
 
@@ -214,20 +214,20 @@ class FooterBuilder : Builder<Footer> {
         iconUrl = user.avatarUrl ?: user.defaultAvatarUrl
     }
 
-    override fun build() = Footer(text, iconUrl, null)
+    override fun build() = Footer(text, iconUrl.ifEmpty { null }, null)
 
 }
 
 /**
  * An embed's [ImageInfo] builder
  */
-class ImageBuilder : Builder<ImageInfo> {
+class ImageBuilder : Builder<ImageInfo?> {
     /**
      * The URL of the image
      */
     var url = ""
 
-    override fun build() = ImageInfo(url, null, 0, 0)
+    override fun build() = if (url.isEmpty()) null else ImageInfo(url.ifEmpty { null }, null, 0, 0)
 
 }
 
