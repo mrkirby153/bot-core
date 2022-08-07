@@ -1,5 +1,6 @@
 package com.mrkirby153.botcore.spring;
 
+import com.mrkirby153.botcore.command.slashcommand.dsl.DslCommandExecutor;
 import com.mrkirby153.botcore.spring.event.BotReadyEvent;
 import net.dv8tion.jda.api.JDA.Status;
 import net.dv8tion.jda.api.OnlineStatus;
@@ -122,8 +123,15 @@ public class JDAAutoConfiguration {
         if (eventRelay) {
             manager.addEventListener(eventHandler);
         }
+        manager.addEventListener(dslCommandExecutor());
         manager.addEventListener(new ShardReadyListener(manager));
         return manager;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public DslCommandExecutor dslCommandExecutor() {
+        return new DslCommandExecutor();
     }
 
     /**
