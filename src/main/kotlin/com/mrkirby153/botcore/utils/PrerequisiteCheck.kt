@@ -5,7 +5,7 @@ package com.mrkirby153.botcore.utils
  *
  * @param instance An instance providing context to checks
  */
-class PrerequisiteCheck<T>(
+open class PrerequisiteCheck<T>(
     val instance: T
 ) {
     /**

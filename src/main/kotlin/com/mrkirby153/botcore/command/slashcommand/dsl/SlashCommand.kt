@@ -29,21 +29,21 @@ open class AbstractSlashCommand<A : Arguments>(
     lateinit var name: String
     lateinit var description: String
 
-    private val checks = mutableListOf<PrerequisiteCheck<SlashContext<A>>.() -> Unit>()
+    private val checks = mutableListOf<CommandPrerequisiteCheck<A>.() -> Unit>()
 
     /**
      * Adds a prerequisite check to this slash command. This check is run before the command is
      * executed. To prevent the command from running and optionally display a message to the user
      * invoke [PrerequisiteCheck.fail] from inside the check
      */
-    fun check(builder: PrerequisiteCheck<SlashContext<A>>.() -> Unit) {
+    fun check(builder: CommandPrerequisiteCheck<A>.() -> Unit) {
         checks.add(builder)
     }
 
     /**
      * Returns a new instance of the arguments class
      */
-    fun args() = arguments?.invoke()
+    internal fun args() = arguments?.invoke()
 
     /**
      * Executes the slash command. If [body] is null, this no-ops
@@ -51,7 +51,7 @@ open class AbstractSlashCommand<A : Arguments>(
     internal fun execute(event: SlashCommandInteractionEvent) {
         val ctx = SlashContext(this, event)
         ctx.load()
-        val checkCtx = PrerequisiteCheck(ctx)
+        val checkCtx = CommandPrerequisiteCheck(ctx)
         checks.forEach {
             it(checkCtx)
             if (checkCtx.failed) {
