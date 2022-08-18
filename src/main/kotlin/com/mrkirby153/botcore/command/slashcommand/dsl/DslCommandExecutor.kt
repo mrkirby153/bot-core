@@ -2,9 +2,7 @@ package com.mrkirby153.botcore.command.slashcommand.dsl
 
 import com.mrkirby153.botcore.command.CommandException
 import com.mrkirby153.botcore.command.args.BatchArgumentParseException
-import com.mrkirby153.botcore.command.slashcommand.dsl.types.AutocompleteEligible
-import com.mrkirby153.botcore.command.slashcommand.dsl.types.IArgBuilder
-import com.mrkirby153.botcore.command.slashcommand.dsl.types.ModifiesOption
+import com.mrkirby153.botcore.command.slashcommand.dsl.types.ArgumentBuilder
 import com.mrkirby153.botcore.i18n.TranslationProvider
 import com.mrkirby153.botcore.i18n.TranslationProviderLocalizationFunction
 import com.mrkirby153.botcore.log
@@ -15,9 +13,9 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.interactions.commands.Command
+import net.dv8tion.jda.api.interactions.commands.Command.Option
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
 import net.dv8tion.jda.api.interactions.commands.build.Commands
-import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData
 import net.dv8tion.jda.api.interactions.commands.context.ContextInteraction
@@ -79,22 +77,14 @@ class DslCommandExecutor(
         }
     }
 
-    private fun createOption(arg: IArgument<*, out IArgBuilder<*>>) = OptionData(
-        arg.type,
-        arg.displayName,
-        arg.description,
-        arg !is NullableArgument,
-        arg.builder is AutocompleteEligible && (arg.builder as AutocompleteEligible).autocompleteFunction != null
-    ).apply {
-        if (arg.builder is ModifiesOption) {
-            (arg.builder as ModifiesOption).modify(this)
-        }
+    private fun createOption(arg: ArgumentContainer<*, *>) = arg.builder.createOption().apply {
+        isRequired = arg.required
     }
 
     private fun populateArgs(data: SubcommandData, args: Arguments?) {
         if (args != null) {
             data.addOptions(
-                args.get().map { arg ->
+                args.getArguments().map { arg ->
                     createOption(arg)
                 })
         }
@@ -134,7 +124,7 @@ class DslCommandExecutor(
             val args = cmd.args()
             if (args != null) {
                 commandData.addOptions(
-                    args.get().map { arg ->
+                    args.getArguments().map { arg ->
                         createOption(arg)
                     })
             }

@@ -53,32 +53,30 @@ class SlashContext<A : Arguments>(
 
 
         val argParseErrors = mutableMapOf<String, String>()
-        args.get().forEach { arg ->
-            val name = arg.displayName
-            val raw =
-                event.getOption(name)
-            log.trace("Mapping {} -> {}. Required? {}", name, raw, arg !is NullableArgument)
+        event.options.forEach { opt ->
+            val name = opt.name
+            val arg = args.getArgument(name) ?: return@forEach
+            val raw = event.getOption(name)
+            log.trace("Mapping {} -> {}. Required? {}", opt.name, raw, arg.required)
             if (raw == null) {
-                if (arg !is NullableArgument) {
-                    log.trace("Required argument $name was somehow not provided")
+                if (arg.required) {
+                    log.error("Required argument $name was somehow not provided")
                     argParseErrors[name] = "Required argument was not provided"
                 }
-            } else {
-                log.trace("Parsing argument {} with {}", name, raw)
-                try {
-                    arg.parse(raw)
-                    log.trace("Parsed {} to {}", name, arg)
-                } catch (e: ArgumentParseException) {
-                    argParseErrors[name] = e.message ?: "An unknown parse error occurred"
-                }
+                return@forEach
+            }
+            log.trace("Attempting to parse argument {} with {}", name, raw)
+            try {
+                arg.doConversion(raw)
+            } catch (e: ArgumentParseException) {
+                log.trace("Parse of {} failed", name, e)
+                argParseErrors[name] = e.message ?: "An unknown error occurred"
             }
         }
         if (argParseErrors.isNotEmpty()) {
-            log.trace("Parsing completed with {} errors", argParseErrors.size)
+            log.trace("Parse completed with {} errors", argParseErrors.size)
             throw BatchArgumentParseException(argParseErrors.map { (k, v) ->
-                k to ArgumentParseException(
-                    v
-                )
+                k to ArgumentParseException(v)
             }.toMap())
         }
     }

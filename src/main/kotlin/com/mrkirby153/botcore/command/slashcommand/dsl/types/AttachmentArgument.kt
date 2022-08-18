@@ -7,14 +7,11 @@ import net.dv8tion.jda.api.interactions.commands.OptionMapping
 import net.dv8tion.jda.api.interactions.commands.OptionType
 
 
-class AttachmentConverter : ArgumentConverter<Attachment> {
+object AttachmentConverter : ArgumentConverter<Attachment> {
     override fun convert(input: OptionMapping) = input.asAttachment
+
+    override val type = OptionType.ATTACHMENT
 }
 
-class AttachmentArgument : GenericArgument<Attachment>(OptionType.ATTACHMENT, ::AttachmentConverter)
-
-class OptionalAttachment : GenericNullableArgument<Attachment>(OptionType.ATTACHMENT, ::AttachmentConverter)
-
-fun Arguments.attachment(body: AttachmentArgument.() -> Unit) = genericArgument(::AttachmentArgument, body)
-
-fun Arguments.optionalAttachment(body: OptionalAttachment.() -> Unit) = optionalGenericArgument(::OptionalAttachment, body)
+fun Arguments.attachment(body: ArgumentBuilder<Attachment>.() -> Unit) =
+    ArgumentBuilder(this, AttachmentConverter).apply(body)

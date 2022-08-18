@@ -1,7 +1,6 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl
 
 import com.mrkirby153.botcore.command.CommandException
-import com.mrkirby153.botcore.command.slashcommand.dsl.types.AutocompleteEligible
 import com.mrkirby153.botcore.utils.PrerequisiteCheck
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
@@ -49,7 +48,7 @@ open class AbstractSlashCommand<A : Arguments>(
     /**
      * Executes the slash command. If [body] is null, this no-ops
      */
-    fun execute(event: SlashCommandInteractionEvent) {
+    internal fun execute(event: SlashCommandInteractionEvent) {
         val ctx = SlashContext(this, event)
         ctx.load()
         val checkCtx = PrerequisiteCheck(ctx)
@@ -68,24 +67,22 @@ open class AbstractSlashCommand<A : Arguments>(
     /**
      * Handle the autocomplete [event]
      * @return The list of choices derived from the commands autocomplete function, or an empty list
-     * if the command is not autocompletable
-     *
-     * @see AutocompleteEligible
+     * if no autocomplete function has been defined
      */
-    fun handleAutocomplete(event: CommandAutoCompleteInteractionEvent): List<Command.Choice> {
+    internal fun handleAutocomplete(event: CommandAutoCompleteInteractionEvent): List<Command.Choice> {
         val argInst =
             args() ?: return listOf(Command.Choice("<<INVALID AUTOCOMPLETE SETTING>>", -1))
         val focused = event.focusedOption.name
-        val inst = argInst.get(focused) ?: return emptyList()
+        val inst = argInst.getArgument(focused) ?: return emptyList()
         val builder = inst.builder
-        if (builder is AutocompleteEligible) {
-            return if (builder.autocompleteFunction != null) {
-                builder.autocompleteFunction!!.invoke(event)
-            } else {
-                listOf(Command.Choice("<<NO AUTOCOMPLETE HANDLER>>", -1))
-            }
+        val choices = if (builder.autoCompleteCallback != null) {
+            builder.autoCompleteCallback!!.invoke(event)
+        } else {
+            emptyList()
         }
-        return emptyList()
+        return choices.map { (k, v) ->
+            Command.Choice(k, v)
+        }
     }
 }
 

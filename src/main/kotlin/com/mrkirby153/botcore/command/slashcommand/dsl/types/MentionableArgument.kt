@@ -3,23 +3,40 @@ package com.mrkirby153.botcore.command.slashcommand.dsl.types
 import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentConverter
 import com.mrkirby153.botcore.command.slashcommand.dsl.Arguments
 import net.dv8tion.jda.api.entities.IMentionable
+import net.dv8tion.jda.api.entities.Role
+import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.interactions.commands.OptionMapping
 import net.dv8tion.jda.api.interactions.commands.OptionType
 
-class MentionableConverter : ArgumentConverter<IMentionable> {
+object MentionableConverter : ArgumentConverter<IMentionable> {
     override fun convert(input: OptionMapping): IMentionable {
         return input.asMentionable
     }
+
+    override val type = OptionType.MENTIONABLE
 }
 
-class MentionableArgument :
-    GenericArgument<IMentionable>(OptionType.MENTIONABLE, ::MentionableConverter)
+object UserConverter : ArgumentConverter<User> {
+    override fun convert(input: OptionMapping): User {
+        return input.asUser
+    }
 
-class OptionalMentionableArgument :
-    GenericNullableArgument<IMentionable>(OptionType.MENTIONABLE, ::MentionableConverter)
+    override val type = OptionType.USER
+}
 
-fun Arguments.mentonable(body: MentionableArgument.() -> Unit) =
-    genericArgument(::MentionableArgument, body)
+object RoleConverter : ArgumentConverter<Role> {
+    override fun convert(input: OptionMapping): Role {
+        return input.asRole
+    }
 
-fun Arguments.optionalMentionable(body: OptionalMentionableArgument.() -> Unit) =
-    optionalGenericArgument(::OptionalMentionableArgument, body)
+    override val type = OptionType.ROLE
+}
+
+fun Arguments.mentionable(body: ArgumentBuilder<IMentionable>.() -> Unit) =
+    ArgumentBuilder(this, MentionableConverter).apply(body)
+
+fun Arguments.user(body: ArgumentBuilder<User>.() -> Unit) =
+    ArgumentBuilder(this, UserConverter).apply(body)
+
+fun Arguments.role(body: ArgumentBuilder<Role>.() -> Unit) =
+    ArgumentBuilder(this, RoleConverter).apply(body)
