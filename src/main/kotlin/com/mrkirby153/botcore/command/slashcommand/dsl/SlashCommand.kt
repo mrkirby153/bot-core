@@ -1,7 +1,6 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl
 
 import com.mrkirby153.botcore.command.CommandException
-import com.mrkirby153.botcore.log
 import com.mrkirby153.botcore.utils.PrerequisiteCheck
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
@@ -27,11 +26,13 @@ open class AbstractSlashCommand<A : Arguments>(
     private val arguments: (() -> A)?
 ) {
     internal var body: (SlashContext<A>.() -> Unit)? = null
-    internal var context: (A.() -> Unit)? = null
+    private var contexts = mutableListOf<(A.() -> Unit)>()
     lateinit var name: String
     lateinit var description: String
 
     private val checks = mutableListOf<CommandPrerequisiteCheck<A>.() -> Unit>()
+
+    private var evaluatingContexts = false
 
     /**
      * Adds a prerequisite check to this slash command. This check is run before the command is
@@ -56,10 +57,15 @@ open class AbstractSlashCommand<A : Arguments>(
         val ctx = SlashContext(this, event)
         ctx.load()
 
-        context?.let {
-            log.trace("Evaluating context before executing command")
-            it(ctx.args)
+        try {
+            evaluatingContexts = true
+            contexts.forEach {
+                it(ctx.args)
+            }
+        } finally {
+            evaluatingContexts = false
         }
+
         val checkCtx = CommandPrerequisiteCheck(ctx)
         checks.forEach {
             it(checkCtx)
@@ -98,7 +104,8 @@ open class AbstractSlashCommand<A : Arguments>(
      * A function evaluated after arguments are parsed but before the command is executed
      */
     fun context(body: A.() -> Unit) {
-        this.context = body
+        check(!evaluatingContexts) { "Cannot add contexts inside of contexts" }
+        contexts.add(body)
     }
 }
 
