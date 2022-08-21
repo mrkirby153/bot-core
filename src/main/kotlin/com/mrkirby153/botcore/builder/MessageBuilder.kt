@@ -7,7 +7,14 @@ import net.dv8tion.jda.api.entities.Message.MentionType
 import net.dv8tion.jda.api.entities.Role
 import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.entities.emoji.CustomEmoji
+import net.dv8tion.jda.api.interactions.components.ItemComponent
 import net.dv8tion.jda.api.utils.MarkdownSanitizer
+import net.dv8tion.jda.api.utils.messages.AbstractMessageBuilder
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder
+import net.dv8tion.jda.api.utils.messages.MessageCreateData
+import net.dv8tion.jda.api.utils.messages.MessageData
+import net.dv8tion.jda.api.utils.messages.MessageEditBuilder
+import net.dv8tion.jda.api.utils.messages.MessageEditData
 
 /**
  * Marker annotation for the Messasge DSL
@@ -18,15 +25,15 @@ annotation class MessageDsl
 /**
  * Builds a [Message]
  *
- * @return A [Message]
+ * @return A [MessageBuilder]
  */
-fun message(builder: MessageBuilder.() -> Unit) = MessageBuilder().apply(builder).build()
+fun message(builder: MessageBuilder.() -> Unit) = MessageBuilder().apply(builder)
 
 /**
  * A [Message] builder
  */
 @MessageDsl
-class MessageBuilder : Builder<Message> {
+class MessageBuilder {
     /**
      * If this message should be spoken aloud
      */
@@ -50,14 +57,24 @@ class MessageBuilder : Builder<Message> {
     private val mentions = mutableListOf<IMentionable>()
     private val allowMentions = mutableSetOf<MentionType>()
 
-    override fun build(): Message {
-        val jdaMessageBuilder = net.dv8tion.jda.api.MessageBuilder()
+    fun create(): MessageCreateData {
+        val jdaMessageBuilder = MessageCreateBuilder()
         jdaMessageBuilder.setContent(content)
-        jdaMessageBuilder.setActionRows(actionRows.map { it.build() })
+        jdaMessageBuilder.setComponents(actionRows.map { it.build() })
         jdaMessageBuilder.setEmbeds(embeds.map { it.build() })
         jdaMessageBuilder.setAllowedMentions(allowMentions)
         jdaMessageBuilder.mention(mentions)
         jdaMessageBuilder.setTTS(tts)
+        return jdaMessageBuilder.build()
+    }
+
+    fun edit(): MessageEditData {
+        val jdaMessageBuilder = MessageEditBuilder()
+        jdaMessageBuilder.setContent(content)
+        jdaMessageBuilder.setComponents(actionRows.map { it.build() })
+        jdaMessageBuilder.setEmbeds(embeds.map { it.build() })
+        jdaMessageBuilder.setAllowedMentions(allowMentions)
+        jdaMessageBuilder.mention(mentions)
         return jdaMessageBuilder.build()
     }
 

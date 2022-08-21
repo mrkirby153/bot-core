@@ -43,7 +43,7 @@ class SlashContext<A : Arguments>(
     fun reply(body: MessageBuilder.() -> Unit): ReplyCallbackAction {
         val mb = MessageBuilder()
         body(mb)
-        return event.reply(mb.build())
+        return event.reply(mb.create())
     }
 
     private fun loadArguments() {
