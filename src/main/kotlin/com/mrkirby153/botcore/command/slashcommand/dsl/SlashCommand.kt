@@ -1,6 +1,7 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl
 
 import com.mrkirby153.botcore.command.CommandException
+import com.mrkirby153.botcore.log
 import com.mrkirby153.botcore.utils.PrerequisiteCheck
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
@@ -25,7 +26,8 @@ import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions
 open class AbstractSlashCommand<A : Arguments>(
     private val arguments: (() -> A)?
 ) {
-    var body: (SlashContext<A>.() -> Unit)? = null
+    internal var body: (SlashContext<A>.() -> Unit)? = null
+    internal var context: (A.() -> Unit)? = null
     lateinit var name: String
     lateinit var description: String
 
@@ -34,7 +36,9 @@ open class AbstractSlashCommand<A : Arguments>(
     /**
      * Adds a prerequisite check to this slash command. This check is run before the command is
      * executed. To prevent the command from running and optionally display a message to the user
-     * invoke [PrerequisiteCheck.fail] from inside the check
+     * invoke [PrerequisiteCheck.fail] from inside the check.
+     *
+     * Additional checks can be created by adding extension functions to `CommandPrerequisiteCheck<out Arguments>`
      */
     fun check(builder: CommandPrerequisiteCheck<A>.() -> Unit) {
         checks.add(builder)
@@ -51,6 +55,11 @@ open class AbstractSlashCommand<A : Arguments>(
     internal fun execute(event: SlashCommandInteractionEvent) {
         val ctx = SlashContext(this, event)
         ctx.load()
+
+        context?.let {
+            log.trace("Evaluating context before executing command")
+            it(ctx.args)
+        }
         val checkCtx = CommandPrerequisiteCheck(ctx)
         checks.forEach {
             it(checkCtx)
@@ -83,6 +92,13 @@ open class AbstractSlashCommand<A : Arguments>(
         return choices.map { (k, v) ->
             Command.Choice(k, v)
         }
+    }
+
+    /**
+     * A function evaluated after arguments are parsed but before the command is executed
+     */
+    fun context(body: A.() -> Unit) {
+        this.context = body
     }
 }
 

@@ -2,10 +2,10 @@ package com.mrkirby153.botcore.command.slashcommand.dsl
 
 import com.mrkirby153.botcore.command.CommandException
 import com.mrkirby153.botcore.command.args.BatchArgumentParseException
-import com.mrkirby153.botcore.command.slashcommand.dsl.types.ArgumentBuilder
 import com.mrkirby153.botcore.i18n.TranslationProvider
 import com.mrkirby153.botcore.i18n.TranslationProviderLocalizationFunction
 import com.mrkirby153.botcore.log
+import com.mrkirby153.botcore.utils.PrerequisiteCheck
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent
@@ -13,7 +13,6 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.interactions.commands.Command
-import net.dv8tion.jda.api.interactions.commands.Command.Option
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
 import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData
@@ -44,6 +43,9 @@ class DslCommandExecutor(
     private val registeredCommands = mutableMapOf<String, SlashCommand<out Arguments>>()
     private val userContextCommands = mutableListOf<UserContextCommand>()
     private val messageContextCommands = mutableListOf<MessageContextCommand>()
+
+    private val globalChecks =
+        mutableListOf<PrerequisiteCheck<AbstractSlashCommand<*>>.() -> Unit>()
 
     private val localizationFunction: LocalizationFunction? =
         if (translationProvider != null && translationBundle != null) TranslationProviderLocalizationFunction(
@@ -174,11 +176,28 @@ class DslCommandExecutor(
     }
 
     /**
+     * Gets a list of [CommandData] for all commands registered with this executor
+     */
+    fun getCommandData() = buildCommandData()
+
+    /**
      * Executes a slash command from the provided [event]
      */
     fun execute(event: SlashCommandInteractionEvent) {
         val cmd = getSlashCommand(event) ?: return
         log.trace("Executing slash command ${event.commandPath}")
+        val checkCtx = PrerequisiteCheck(cmd)
+        globalChecks.forEach {
+            it(checkCtx)
+            if (checkCtx.failed) {
+                return@forEach
+            }
+        }
+        if (checkCtx.failed) {
+            event.reply(":no_entry: ${checkCtx.failureMessage ?: "Command prerequisites did not pass"}")
+                .queue()
+            return
+        }
         try {
             cmd.execute(event)
         } catch (e: CommandException) {
@@ -237,6 +256,13 @@ class DslCommandExecutor(
                 is UserContextCommand -> userContextCommands.add(it)
             }
         }
+    }
+
+    /**
+     * Adds a global check
+     */
+    fun globalCheck(body: PrerequisiteCheck<AbstractSlashCommand<*>>.() -> Unit) {
+        this.globalChecks.add(body)
     }
 
     /**

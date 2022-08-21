@@ -27,4 +27,18 @@ open class PrerequisiteCheck<T>(
         this.failed = true
         this.failureMessage = message
     }
+
+    fun failWhen(condition: Boolean, message: String? = null) {
+        if (condition) {
+            this.failed = true
+            this.failureMessage = message;
+        }
+    }
+
+    fun failWhen(message: String? = null, check: () -> Boolean) {
+        if (!check()) {
+            this.failed = true
+            this.failureMessage = message
+        }
+    }
 }
