@@ -5,6 +5,7 @@ import com.mrkirby153.botcore.utils.PrerequisiteCheck
 /**
  * A subclass of [PrerequisiteCheck] explicitly for slash command prerequisite checks
  */
+@SlashDsl
 class CommandPrerequisiteCheck<T : Arguments>(instance: SlashContext<T>) :
     PrerequisiteCheck<SlashContext<T>>(instance) {
 

@@ -19,6 +19,7 @@ import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction
  * @param event The event that invoked this slash command
  * @param A The [Arguments] for this slash command
  */
+@SlashDsl
 class SlashContext<A : Arguments>(
     val command: AbstractSlashCommand<A>,
     private val event: SlashCommandInteractionEvent
