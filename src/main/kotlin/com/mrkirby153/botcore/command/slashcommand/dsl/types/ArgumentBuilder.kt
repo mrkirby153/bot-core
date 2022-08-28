@@ -1,9 +1,8 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl.types
 
+import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentContainer
 import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentConverter
 import com.mrkirby153.botcore.command.slashcommand.dsl.Arguments
-import com.mrkirby153.botcore.command.slashcommand.dsl.OptionalArgumentContainer
-import com.mrkirby153.botcore.command.slashcommand.dsl.RequiredArgumentContainer
 import com.mrkirby153.botcore.log
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
 
@@ -19,17 +18,9 @@ open class ArgumentBuilder<T : Any>(
 
     internal var autoCompleteCallback: AutoCompleteCallback? = null
 
-    fun required(): RequiredArgumentContainer<T> {
-        val container = RequiredArgumentContainer(converter, this)
-        inst.addArgument(container)
-        return container
-    }
+    fun required() = ArgumentContainer(converter, this, true).also { inst.addArgument(it) }
 
-    fun optional(): OptionalArgumentContainer<T> {
-        val container = OptionalArgumentContainer(converter, this)
-        inst.addArgument(container)
-        return container
-    }
+    fun optional() = ArgumentContainer<T?, T>(converter, this, false).also { inst.addArgument(it) }
 
     fun autocomplete(callback: AutoCompleteCallback) {
         autoCompleteCallback = callback

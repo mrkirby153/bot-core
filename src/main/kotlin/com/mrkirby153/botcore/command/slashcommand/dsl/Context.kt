@@ -67,7 +67,7 @@ class SlashContext<A : Arguments>(
             }
             log.trace("Attempting to parse argument {} with {}", name, raw)
             try {
-                arg.doConversion(raw)
+                args.addMappedValue(name, arg.converter.convert(opt))
             } catch (e: ArgumentParseException) {
                 log.trace("Parse of {} failed", name, e)
                 argParseErrors[name] = e.message ?: "An unknown error occurred"
