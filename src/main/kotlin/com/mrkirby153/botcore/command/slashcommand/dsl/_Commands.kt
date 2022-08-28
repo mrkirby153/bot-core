@@ -25,17 +25,24 @@ annotation class SlashDsl
 inline fun <T : Arguments> slashCommand(
     noinline arguments: () -> T,
     body: SlashCommand<T>.() -> Unit
-): SlashCommand<T> {
-    val command = SlashCommand(arguments)
-    body(command)
-    return command
-}
+) = SlashCommand(arguments).apply(body)
+
+/**
+ * Declares a new slash command with the arguments [T]. [T] _must_ have a default noargs constructor
+ * for it to be correctly invoked
+ *
+ * @see [SlashCommand]
+ */
+inline fun <reified T : Arguments> slashCommand(body: SlashCommand<T>.() -> Unit) = SlashCommand {
+    T::class.java.getConstructor().newInstance()
+}.apply(body)
 
 /**
  * Declares a slash command with no arguments.
  *
  * @see [slashCommand]
  */
+@JvmName("slashCommandNoArguments")
 inline fun slashCommand(body: SlashCommand<Arguments>.() -> Unit) = slashCommand(::Arguments, body)
 
 /**
@@ -43,39 +50,42 @@ inline fun slashCommand(body: SlashCommand<Arguments>.() -> Unit) = slashCommand
  *
  * @see [slashCommand]
  */
-inline fun <T: Arguments> DslCommandExecutor.slashCommand(noinline arguments: () -> T, body: SlashCommand<T>.() -> Unit): SlashCommand<T> {
-    val command = SlashCommand(arguments)
-    body(command)
-    this.register(command)
-    return command
-}
+inline fun <T : Arguments> DslCommandExecutor.slashCommand(
+    noinline arguments: () -> T,
+    body: SlashCommand<T>.() -> Unit
+) = SlashCommand(arguments).apply(body).also { this.register(it) }
+
+/**
+ * Declares a slash command with [T] arguments. [T] _must_ have a noargs constructor
+ *
+ * @see [SlashCommand]
+ */
+inline fun <reified T : Arguments> DslCommandExecutor.slashCommand(
+    body: SlashCommand<T>.() -> Unit
+) = SlashCommand {
+    T::class.java.getConstructor().newInstance()
+}.apply(body).also { this.register(it) }
 
 /**
  * Declares a slash command with no arguments.
  *
  * @see [slashCommand]
  */
-inline fun DslCommandExecutor.slashCommand(body: SlashCommand<Arguments>.() -> Unit) = this.register(slashCommand(::Arguments, body))
+inline fun DslCommandExecutor.slashCommand(body: SlashCommand<Arguments>.() -> Unit) =
+    this.register(slashCommand(::Arguments, body))
 
 /**
  * Declares a message context command
  */
-inline fun DslCommandExecutor.messageContextCommand(body: MessageContextCommand.() -> Unit): ContextCommand<MessageContext> {
-    val command = MessageContextCommand()
-    body(command)
-    this.register(command)
-    return command
-}
+inline fun DslCommandExecutor.messageContextCommand(body: MessageContextCommand.() -> Unit) =
+    MessageContextCommand().apply(body).also { this.register(it) }
 
 /**
  * Declares a user context command
  */
-inline fun DslCommandExecutor.userContextCommand(body: UserContextCommand.() -> Unit): ContextCommand<UserContext> {
-    val command = UserContextCommand()
-    body(command)
-    this.register(command)
-    return command
-}
+inline fun DslCommandExecutor.userContextCommand(body: UserContextCommand.() -> Unit) =
+    UserContextCommand().apply(body).also { this.register(it) }
+
 
 /**
  * Declares a sub-command with the provided [arguments]
@@ -83,30 +93,36 @@ inline fun DslCommandExecutor.userContextCommand(body: UserContextCommand.() -> 
 inline fun <T : Arguments> SlashCommand<*>.subCommand(
     noinline arguments: () -> T,
     body: SubCommand<T>.() -> Unit
-) {
-    val command = SubCommand(arguments)
-    body(command)
-    this.subCommands[command.name] = command
+) = SubCommand(arguments).apply(body).also {
+    check(this.subCommands[it.name] == null) { "Registering a duplicate sub-command $name" }
+    this.subCommands[it.name] = it
 }
+
+/**
+ * Declares a sub-command with the arguments [T]. [T] _must_ have a default noargs constructor
+ */
+inline fun <reified T : Arguments> SlashCommand<*>.subCommand(body: SubCommand<T>.() -> Unit) =
+    SubCommand {
+        T::class.java.getConstructor().newInstance()
+    }.apply(body).also {
+        this.subCommands[it.name] = it
+    }
 
 /**
  * Declares a sub-command with no arguments
  */
-inline fun SlashCommand<Arguments>.subCommand(body: SubCommand<Arguments>.() -> Unit) {
-    return subCommand(::Arguments, body)
-}
+@JvmName("subCommandDefaultArguments")
+inline fun SlashCommand<Arguments>.subCommand(body: SubCommand<Arguments>.() -> Unit) =
+    subCommand(::Arguments, body)
 
 /**
  * Declares a group with the provided [name]
  */
-inline fun SlashCommand<*>.group(name: String, body: Group.() -> Unit) {
-    val group = Group(name)
-    body(group)
-    if (this.groups[name] != null) {
-        throw IllegalArgumentException("Duplicate group $name")
+inline fun SlashCommand<*>.group(name: String, body: Group.() -> Unit) =
+    Group(name).apply(body).also {
+        check(this.groups[it.name] != null) { "Duplicate group $name" }
+        this.groups[it.name] = it
     }
-    this.groups[name] = group
-}
 
 /**
  * Declares a sub command with the given [arguments]
@@ -114,18 +130,13 @@ inline fun SlashCommand<*>.group(name: String, body: Group.() -> Unit) {
 inline fun <T : Arguments> Group.slashCommand(
     noinline arguments: () -> T,
     body: SubCommand<T>.() -> Unit
-) {
-    val cmd = SubCommand(arguments)
-    body(cmd)
-    this.commands.add(cmd)
-}
+) = SubCommand(arguments).apply(body).also { this.commands.add(it) }
 
 /**
  * Declares a sub-command with no arguments
  */
-inline fun Group.slashCommand(body: SubCommand<Arguments>.() -> Unit) {
+inline fun Group.slashCommand(body: SubCommand<Arguments>.() -> Unit) =
     slashCommand(::Arguments, body)
-}
 
 /**
  * Declares a user context command
@@ -140,11 +151,8 @@ inline fun Group.slashCommand(body: SubCommand<Arguments>.() -> Unit) {
  * }
  * ```
  */
-inline fun userContextCommand(body: UserContextCommand.() -> Unit): ContextCommand<UserContext> {
-    val builder = UserContextCommand()
-    body(builder)
-    return builder
-}
+inline fun userContextCommand(body: UserContextCommand.() -> Unit) =
+    UserContextCommand().apply(body)
 
 /**
  * Declares a message context command
@@ -162,8 +170,5 @@ inline fun userContextCommand(body: UserContextCommand.() -> Unit): ContextComma
  * }
  * ```
  */
-inline fun messageContextCommand(body: MessageContextCommand.() -> Unit): ContextCommand<MessageContext> {
-    val builder = MessageContextCommand()
-    body(builder)
-    return builder
-}
+inline fun messageContextCommand(body: MessageContextCommand.() -> Unit) =
+    MessageContextCommand().apply(body)
