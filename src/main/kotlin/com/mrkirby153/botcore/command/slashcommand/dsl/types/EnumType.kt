@@ -28,8 +28,23 @@ class EnumArgumentBuilder<T : Enum<T>>(
     private val validEnums: Array<T>
 ) : ArgumentBuilder<T>(inst, EnumConverter(getter, validEnums)) {
 
+    init {
+        if (validEnums.size > 25) {
+            autocomplete { event ->
+                validEnums.filter {
+                    it.name.lowercase().startsWith(event.focusedOption.value.lowercase())
+                }.map {
+                    Pair(it.name, it.name)
+                }.take(25)
+            }
+        }
+    }
+
     override fun createOption() = super.createOption().apply {
-        addChoices(validEnums.map { Command.Choice(it.toString(), it.name) })
+        if (validEnums.size < 25)
+            addChoices(validEnums.map { Command.Choice(it.toString(), it.name) })
+        else
+            isAutoComplete = true
     }
 }
 
