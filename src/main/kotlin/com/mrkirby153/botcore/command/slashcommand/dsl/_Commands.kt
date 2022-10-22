@@ -1,5 +1,7 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl
 
+import java.lang.IllegalStateException
+
 @DslMarker
 annotation class SlashDsl
 
@@ -33,9 +35,14 @@ inline fun <T : Arguments> slashCommand(
  *
  * @see [SlashCommand]
  */
-inline fun <reified T : Arguments> slashCommand(body: SlashCommand<T>.() -> Unit) = SlashCommand {
-    T::class.java.getConstructor().newInstance()
-}.apply(body)
+inline fun <reified T : Arguments> slashCommand(body: SlashCommand<T>.() -> Unit) = try {
+    T::class.java.getConstructor()
+    SlashCommand {
+        T::class.java.getConstructor().newInstance()
+    }.apply(body)
+} catch (e: NoSuchMethodException) {
+    throw IllegalArgumentException("Unable to find a default constructor for ${T::class.java}")
+}
 
 /**
  * Declares a slash command with no arguments.
@@ -62,9 +69,14 @@ inline fun <T : Arguments> DslCommandExecutor.slashCommand(
  */
 inline fun <reified T : Arguments> DslCommandExecutor.slashCommand(
     body: SlashCommand<T>.() -> Unit
-) = SlashCommand {
-    T::class.java.getConstructor().newInstance()
-}.apply(body).also { this.register(it) }
+) = try {
+    T::class.java.getConstructor()
+    SlashCommand {
+        T::class.java.getConstructor().newInstance()
+    }.apply(body).also { this.register(it) }
+} catch (e: NoSuchMethodException) {
+    throw IllegalArgumentException("Unable to find a default constructor for ${T::class.java}")
+}
 
 /**
  * Declares a slash command with no arguments.
