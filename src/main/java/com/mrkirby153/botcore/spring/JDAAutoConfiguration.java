@@ -5,7 +5,7 @@ import com.mrkirby153.botcore.spring.event.BotReadyEvent;
 import net.dv8tion.jda.api.JDA.Status;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.events.ReadyEvent;
+import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
@@ -29,7 +29,6 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
 
 /**
@@ -236,7 +235,7 @@ public class JDAAutoConfiguration {
         }
 
         @Override
-        public void onReady(@Nonnull ReadyEvent event) {
+        public void onReady(ReadyEvent event) {
             log.info("Shard {} has logged in as {}#{}", event.getJDA().getShardInfo().getShardId(),
                 event.getJDA().getSelfUser().getName(),
                 event.getJDA().getSelfUser().getDiscriminator());

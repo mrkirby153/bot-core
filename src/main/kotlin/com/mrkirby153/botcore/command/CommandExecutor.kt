@@ -9,10 +9,10 @@ import com.mrkirby153.botcore.command.help.HelpEntry
 import com.mrkirby153.botcore.command.help.Hidden
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.Permission
-import net.dv8tion.jda.api.entities.ChannelType
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Message
-import net.dv8tion.jda.api.entities.TextChannel
+import net.dv8tion.jda.api.entities.channel.ChannelType
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.sharding.ShardManager
 import java.lang.reflect.InvocationTargetException
 import java.util.LinkedList
@@ -162,12 +162,14 @@ open class CommandExecutor(
                 if (!isMention)
                     return
             }
+
             MentionMode.OPTIONAL -> {
                 if (!isMention) {
                     if (!raw.startsWith(prefix))
                         return
                 }
             }
+
             MentionMode.DISABLED -> {
                 if (!raw.startsWith(prefix))
                     return
@@ -234,7 +236,11 @@ open class CommandExecutor(
             // Check permissions
             val missingPerms = mutableListOf<Permission>()
             resolved.metadata.permissions.forEach { permission ->
-                if (!message.guild.selfMember.hasPermission(message.channel.asTextChannel(), permission)) {
+                if (!message.guild.selfMember.hasPermission(
+                        message.channel.asTextChannel(),
+                        permission
+                    )
+                ) {
                     missingPerms.add(permission)
                 }
             }

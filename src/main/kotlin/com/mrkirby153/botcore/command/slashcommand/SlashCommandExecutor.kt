@@ -2,14 +2,14 @@ package com.mrkirby153.botcore.command.slashcommand
 
 import com.mrkirby153.botcore.command.ClearanceResolver
 import com.mrkirby153.botcore.command.CommandException
-import net.dv8tion.jda.api.entities.Category
 import net.dv8tion.jda.api.entities.IMentionable
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.Role
-import net.dv8tion.jda.api.entities.TextChannel
 import net.dv8tion.jda.api.entities.User
-import net.dv8tion.jda.api.entities.VoiceChannel
+import net.dv8tion.jda.api.entities.channel.concrete.Category
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.GenericContextInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent
@@ -20,9 +20,9 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData
+import org.jetbrains.annotations.Nullable
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
-import javax.annotation.Nullable
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.jvm.javaType
 import kotlin.reflect.jvm.kotlinFunction
@@ -144,11 +144,13 @@ class SlashCommandExecutor(
                     throw IllegalArgumentException("Can't register more than ${Commands.MAX_USER_COMMANDS} user context commands")
                 ContextCommand(annotation.name, method, instance, annotation.clearance)
             }
+
             is MessageCommand -> {
                 if (list.size > Commands.MAX_MESSAGE_COMMANDS)
                     throw IllegalArgumentException("Can't register more than ${Commands.MAX_MESSAGE_COMMANDS} message context commands")
                 ContextCommand(annotation.name, method, instance, annotation.clearance)
             }
+
             else -> throw IllegalArgumentException("Unrecognized type $annotation")
         }
         list.add(cmd)
@@ -202,6 +204,7 @@ class SlashCommandExecutor(
                         data.addSubcommands(subcommandData)
                     }
                 }
+
                 hasGroupChildren -> {
                     nodeChildren.forEach { child ->
                         val subChildren = child.children
@@ -214,6 +217,7 @@ class SlashCommandExecutor(
                         data.addSubcommandGroups(subcommandGroupData)
                     }
                 }
+
                 else -> {
                     data.addOptions(node.options)
                 }
@@ -392,9 +396,11 @@ class SlashCommandExecutor(
             is MessageContextInteractionEvent -> {
                 messageContextCommands
             }
+
             is UserContextInteractionEvent -> {
                 userContextCommands
             }
+
             else -> {
                 // Ignore
                 emptyList()

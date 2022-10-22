@@ -6,8 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 
-import javax.annotation.Nonnull;
-
 /**
  * Event handler to dispatch JDA events into the Spring event publisher
  */
@@ -27,7 +25,7 @@ class EventHandler implements EventListener {
     }
 
     @Override
-    public void onEvent(@Nonnull GenericEvent event) {
+    public void onEvent(GenericEvent event) {
         log.trace("Dispatching event {} to spring", event.getClass());
         eventPublisher.publishEvent(event);
     }
