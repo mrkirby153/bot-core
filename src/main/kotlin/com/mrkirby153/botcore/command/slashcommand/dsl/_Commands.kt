@@ -1,7 +1,5 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl
 
-import java.lang.IllegalStateException
-
 @DslMarker
 annotation class SlashDsl
 
@@ -36,9 +34,9 @@ inline fun <T : Arguments> slashCommand(
  * @see [SlashCommand]
  */
 inline fun <reified T : Arguments> slashCommand(body: SlashCommand<T>.() -> Unit) = try {
-    T::class.java.getConstructor()
+    val constructor = T::class.java.getConstructor()
     SlashCommand {
-        T::class.java.getConstructor().newInstance()
+        constructor.newInstance()
     }.apply(body)
 } catch (e: NoSuchMethodException) {
     throw IllegalArgumentException("Unable to find a default constructor for ${T::class.java}")
@@ -70,9 +68,9 @@ inline fun <T : Arguments> DslCommandExecutor.slashCommand(
 inline fun <reified T : Arguments> DslCommandExecutor.slashCommand(
     body: SlashCommand<T>.() -> Unit
 ) = try {
-    T::class.java.getConstructor()
+    val constructor = T::class.java.getConstructor()
     SlashCommand {
-        T::class.java.getConstructor().newInstance()
+        constructor.newInstance()
     }.apply(body).also { this.register(it) }
 } catch (e: NoSuchMethodException) {
     throw IllegalArgumentException("Unable to find a default constructor for ${T::class.java}")
@@ -114,10 +112,15 @@ inline fun <T : Arguments> SlashCommand<*>.subCommand(
  * Declares a sub-command with the arguments [T]. [T] _must_ have a default noargs constructor
  */
 inline fun <reified T : Arguments> SlashCommand<*>.subCommand(body: SubCommand<T>.() -> Unit) =
-    SubCommand {
-        T::class.java.getConstructor().newInstance()
-    }.apply(body).also {
-        this.subCommands[it.name] = it
+    try {
+        val constructor = T::class.java.getConstructor()
+        SubCommand {
+            constructor.newInstance()
+        }.apply(body).also {
+            this.subCommands[it.name] = it
+        }
+    } catch (e: NoSuchMethodException) {
+        throw IllegalArgumentException("Unable to find a default constructor for ${T::class.java}")
     }
 
 /**
