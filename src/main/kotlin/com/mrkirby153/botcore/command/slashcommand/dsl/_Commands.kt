@@ -28,44 +28,6 @@ inline fun <T : Arguments> slashCommand(
 ) = SlashCommand(arguments).apply(body)
 
 /**
- * Declares a new slash command with the arguments [T]. [T] _must_ have a default noargs constructor
- * for it to be correctly invoked
- *
- * @see [SlashCommand]
- */
-inline fun <reified T : Arguments> slashCommand(body: SlashCommand<T>.() -> Unit) =
-    construct<T>().apply(body)
-
-inline fun <reified T : Arguments> construct(): SlashCommand<T> = try {
-    val constructor = T::class.java.getConstructor()
-    SlashCommand {
-        constructor.newInstance()
-    }
-} catch (e: NoSuchMethodException) {
-    throw IllegalArgumentException("Unable to find a default constructor for ${T::class.java}")
-}
-
-inline fun <reified Outer, reified Inner : Arguments> construct(instance: Outer): SlashCommand<Inner> =
-    try {
-        val constructor = Inner::class.java.getConstructor(Outer::class.java)
-        SlashCommand {
-            constructor.newInstance(instance)
-        }
-    } catch (e: NoSuchMethodException) {
-        throw IllegalArgumentException("Unable to find a default constructor for inner class ${Inner::class.java.canonicalName}")
-    }
-
-/**
- * Declares a new slash command with the arguments [Inner] which is an inner class of [Outer].
- *
- * @see [SlashCommand]
- */
-inline fun <reified Outer, reified Inner : Arguments> slashCommand(
-    instance: Outer,
-    body: SlashCommand<Inner>.() -> Unit
-) = construct<Outer, Inner>(instance).apply(body)
-
-/**
  * Declares a slash command with no arguments.
  *
  * @see [slashCommand]
@@ -82,20 +44,6 @@ inline fun <T : Arguments> DslCommandExecutor.slashCommand(
     noinline arguments: () -> T,
     body: SlashCommand<T>.() -> Unit
 ) = SlashCommand(arguments).apply(body).also { this.register(it) }
-
-/**
- * Declares a slash command with [T] arguments. [T] _must_ have a noargs constructor
- *
- * @see [SlashCommand]
- */
-inline fun <reified T : Arguments> DslCommandExecutor.slashCommand(
-    body: SlashCommand<T>.() -> Unit
-) = construct<T>().apply(body)
-
-inline fun <reified Outer : Any, reified Inner : Arguments> DslCommandExecutor.slashCommand(
-    instance: Outer,
-    body: SlashCommand<Inner>.() -> Unit
-) = construct<Outer, Inner>(instance).apply(body)
 
 /**
  * Declares a slash command with no arguments.
@@ -130,40 +78,10 @@ inline fun <T : Arguments> SlashCommand<*>.subCommand(
 }
 
 /**
- * Declares a sub-command with the arguments [T]. [T] _must_ have a default noargs constructor
- */
-inline fun <reified T : Arguments> SlashCommand<*>.subCommand(body: SubCommand<T>.() -> Unit) =
-    try {
-        val constructor = T::class.java.getConstructor()
-        SubCommand {
-            constructor.newInstance()
-        }.apply(body).also {
-            this.subCommands[it.name] = it
-        }
-    } catch (e: NoSuchMethodException) {
-        throw IllegalArgumentException("Unable to find a default constructor for ${T::class.java}")
-    }
-
-inline fun <reified Outer : Any, reified Inner : Arguments> SlashCommand<*>.subCommand(
-    instance: Inner,
-    body: SubCommand<Inner>.() -> Unit
-) =
-    try {
-        val constructor = Inner::class.java.getConstructor(Outer::class.java)
-        SubCommand {
-            constructor.newInstance(instance)
-        }.apply(body).also {
-            this.subCommands[it.name] = it
-        }
-    } catch (e: NoSuchMethodException) {
-        throw IllegalArgumentException("Unable to find a default constructor for inner class ${Inner::class.java.canonicalName}")
-    }
-
-/**
  * Declares a sub-command with no arguments
  */
 @JvmName("subCommandDefaultArguments")
-inline fun SlashCommand<Arguments>.subCommand(body: SubCommand<Arguments>.() -> Unit) =
+inline fun SlashCommand<*>.subCommand(body: SubCommand<Arguments>.() -> Unit) =
     subCommand(::Arguments, body)
 
 /**
