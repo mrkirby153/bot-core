@@ -94,3 +94,7 @@ compileTestKotlin {
 tasks.dokkaHtml.configure {
     suppressInheritedMembers.set(true)
 }
+
+tasks.withType(org.gradle.jvm.tasks.Jar) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

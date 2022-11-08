@@ -122,7 +122,6 @@ public class JDAAutoConfiguration {
         if (eventRelay) {
             manager.addEventListener(eventHandler);
         }
-        manager.addEventListener(dslCommandExecutor());
         manager.addEventListener(new ShardReadyListener(manager));
         return manager;
     }

@@ -40,7 +40,26 @@ import java.util.concurrent.CompletableFuture
 class DslCommandExecutor(
     translationBundle: String? = null,
     translationProvider: TranslationProvider? = null
-) : ListenerAdapter() {
+) {
+    internal inner class DslCommandExecutorListener : ListenerAdapter() {
+        override fun onSlashCommandInteraction(event: SlashCommandInteractionEvent) {
+            this@DslCommandExecutor.onSlashCommandInteraction(event)
+        }
+
+        override fun onCommandAutoCompleteInteraction(event: CommandAutoCompleteInteractionEvent) {
+            this@DslCommandExecutor.onCommandAutoCompleteInteraction(event)
+        }
+
+        override fun onUserContextInteraction(event: UserContextInteractionEvent) {
+            this@DslCommandExecutor.onUserContextInteraction(event)
+        }
+
+        override fun onMessageContextInteraction(event: MessageContextInteractionEvent) {
+            this@DslCommandExecutor.onMessageContextInteraction(event)
+        }
+    }
+
+    internal val listener: DslCommandExecutorListener = DslCommandExecutorListener()
 
     private val registeredCommands = mutableMapOf<String, SlashCommand<out Arguments>>()
     private val userContextCommands = mutableListOf<UserContextCommand>()
@@ -283,21 +302,29 @@ class DslCommandExecutor(
         body(this)
     }
 
-    override fun onSlashCommandInteraction(event: SlashCommandInteractionEvent) {
+    fun onSlashCommandInteraction(event: SlashCommandInteractionEvent) {
         if (getSlashCommand(event) != null)
             execute(event)
     }
 
-    override fun onCommandAutoCompleteInteraction(event: CommandAutoCompleteInteractionEvent) {
+    fun onCommandAutoCompleteInteraction(event: CommandAutoCompleteInteractionEvent) {
         if (getSlashCommand(event) != null)
             handleAutocomplete(event)
     }
 
-    override fun onUserContextInteraction(event: UserContextInteractionEvent) {
+    fun onUserContextInteraction(event: UserContextInteractionEvent) {
         userContextCommands.firstOrNull { it.name == event.name }?.execute(UserContext(event))
     }
 
-    override fun onMessageContextInteraction(event: MessageContextInteractionEvent) {
+    fun onMessageContextInteraction(event: MessageContextInteractionEvent) {
         messageContextCommands.firstOrNull { it.name == event.name }?.execute(MessageContext(event))
+    }
+
+    fun registerListener(jda: JDA) {
+        jda.addEventListener(listener)
+    }
+
+    fun registerListener(shardManager: ShardManager) {
+        shardManager.addEventListener(shardManager)
     }
 }
