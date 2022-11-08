@@ -22,8 +22,8 @@ repositories {
 
 dependencies {
     implementation 'org.slf4j:slf4j-api:1.7.36'
-    compile 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
-    compile 'javax.annotation:javax.annotation-api:1.3.2'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
+    implementation 'javax.annotation:javax.annotation-api:1.3.2'
     implementation 'org.json:json:20220320'
     implementation 'org.jetbrains.kotlin:kotlin-reflect:1.7.0'
     implementation 'com.ibm.icu:icu4j:71.1'
@@ -36,7 +36,8 @@ dependencies {
 
 group = 'com.mrkirby153'
 version = '4.3-SNAPSHOT'
-sourceCompatibility = "1.9"
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
 
 java {
     withSourcesJar()
@@ -89,7 +90,6 @@ compileTestKotlin {
         jvmTarget = "11"
     }
 }
-targetCompatibility = JavaVersion.VERSION_11
 
 tasks.dokkaHtml.configure {
     suppressInheritedMembers.set(true)
