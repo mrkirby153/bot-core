@@ -7,6 +7,7 @@ import com.mrkirby153.botcore.i18n.TranslationProviderLocalizationFunction
 import com.mrkirby153.botcore.log
 import com.mrkirby153.botcore.utils.PrerequisiteCheck
 import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
@@ -19,6 +20,7 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandData
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData
 import net.dv8tion.jda.api.interactions.commands.context.ContextInteraction
 import net.dv8tion.jda.api.interactions.commands.localization.LocalizationFunction
+import net.dv8tion.jda.api.sharding.ShardManager
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -167,10 +169,18 @@ class DslCommandExecutor(
      * @param jda The JDA instance to use during commit
      * @return A [CompletableFuture] completed when the commands have been committed to all guilds
      */
-    fun commit(jda: JDA, vararg guilds: String): CompletableFuture<Void> {
+    fun commit(jda: JDA, vararg guilds: String) = doCommit({ jda.getGuildById(it) }, guilds)
+
+    fun commit(shardManager: ShardManager, vararg guilds: String) =
+        doCommit({ shardManager.getGuildById(it) }, guilds)
+
+    private fun doCommit(
+        getGuilds: (String) -> Guild?,
+        guilds: Array<out String>
+    ): CompletableFuture<Void> {
         val commands = buildCommandData()
         log.debug("Committing {} commands to the following guilds: {}", commands.size, guilds)
-        val futures = guilds.mapNotNull { jda.getGuildById(it) }
+        val futures = guilds.mapNotNull { getGuilds(it) }
             .map { it.updateCommands().addCommands(commands).submit() }
         return CompletableFuture.allOf(*futures.toTypedArray())
     }
