@@ -69,7 +69,7 @@ inline fun DslCommandExecutor.userContextCommand(body: UserContextCommand.() -> 
 /**
  * Declares a sub-command with the provided [arguments]
  */
-inline fun <T : Arguments> SlashCommand<*>.subCommand(
+inline fun <T : Arguments> SlashCommand<Arguments>.subCommand(
     noinline arguments: () -> T,
     body: SubCommand<T>.() -> Unit
 ) = SubCommand(arguments).apply(body).also {
@@ -81,22 +81,22 @@ inline fun <T : Arguments> SlashCommand<*>.subCommand(
  * Declares a sub-command with no arguments
  */
 @JvmName("subCommandDefaultArguments")
-inline fun SlashCommand<*>.subCommand(body: SubCommand<Arguments>.() -> Unit) =
+inline fun SlashCommand<Arguments>.subCommand(body: SubCommand<Arguments>.() -> Unit) =
     subCommand(::Arguments, body)
 
 /**
  * Declares a group with the provided [name]
  */
-inline fun SlashCommand<*>.group(name: String, body: Group.() -> Unit) =
-    Group(name).apply(body).also {
-        check(this.groups[it.name] != null) { "Duplicate group $name" }
+inline fun SlashCommand<Arguments>.group(name: String, body: Group.() -> Unit) =
+    Group(name, this).apply(body).also {
+        check(this.groups[it.name] == null) { "Duplicate group $name" }
         this.groups[it.name] = it
     }
 
 /**
  * Declares a sub command with the given [arguments]
  */
-inline fun <T : Arguments> Group.slashCommand(
+inline fun <T : Arguments> Group.subCommand(
     noinline arguments: () -> T,
     body: SubCommand<T>.() -> Unit
 ) = SubCommand(arguments).apply(body).also { this.commands.add(it) }
@@ -104,8 +104,8 @@ inline fun <T : Arguments> Group.slashCommand(
 /**
  * Declares a sub-command with no arguments
  */
-inline fun Group.slashCommand(body: SubCommand<Arguments>.() -> Unit) =
-    slashCommand(::Arguments, body)
+inline fun Group.subCommand(body: SubCommand<Arguments>.() -> Unit) =
+    this.subCommand(::Arguments, body)
 
 /**
  * Declares a user context command

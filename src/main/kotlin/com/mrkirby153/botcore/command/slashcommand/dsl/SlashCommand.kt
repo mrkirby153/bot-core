@@ -20,7 +20,7 @@ import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions
  * @param arguments A function returning a new instance of the class to use for arguments. Arguments
  * are exposed under the `args` variable during execution
  * @param A An arguments class from which slash command arguments are derived from
- * @see [slashCommand]
+ * @see [subCommand]
  */
 open class AbstractSlashCommand<A : Arguments>(
     private val arguments: (() -> A)?
@@ -173,7 +173,8 @@ class SlashCommand<A : Arguments>(
  */
 @SlashDsl
 class Group(
-    val name: String
+    val name: String,
+    val parent: SlashCommand<*>
 ) {
     val commands = mutableListOf<SubCommand<*>>()
     lateinit var description: String

@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * Command executor for Kotlin based DSL slash commands.
  *
- * Use [slashCommand] to create slash commands, [messageContextCommand] to create message context
+ * Use [subCommand] to create slash commands, [messageContextCommand] to create message context
  * commands, and [userContextCommands] to create user context commands.
  *
  * Slash, message, and user context commands that are declared in [registerCommands] are
