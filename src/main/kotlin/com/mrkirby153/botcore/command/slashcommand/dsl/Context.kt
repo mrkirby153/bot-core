@@ -7,6 +7,7 @@ import com.mrkirby153.botcore.log
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent
+import net.dv8tion.jda.api.interactions.InteractionHook
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 import net.dv8tion.jda.api.interactions.commands.context.MessageContextInteraction
 import net.dv8tion.jda.api.interactions.commands.context.UserContextInteraction
@@ -41,10 +42,19 @@ class SlashContext<A : Arguments>(
     /**
      * Replies to the interaction using a [MessageBuilder]
      */
-    fun reply(body: MessageBuilder.() -> Unit): ReplyCallbackAction {
+    fun reply(ephemeral: Boolean = false, body: MessageBuilder.() -> Unit): ReplyCallbackAction {
         val mb = MessageBuilder()
         body(mb)
-        return event.reply(mb.create())
+        return event.reply(mb.create()).setEphemeral(ephemeral)
+    }
+
+    /**
+     * Defers and runs the provided [body]. Defers ephemerally if [ephemeral] is set
+     */
+    fun defer(ephemeral: Boolean = false, body: (InteractionHook) -> Unit) {
+        deferReply(ephemeral).queue {
+            body(it)
+        }
     }
 
     private fun loadArguments() {
