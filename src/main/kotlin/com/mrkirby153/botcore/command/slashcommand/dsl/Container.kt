@@ -8,5 +8,6 @@ import com.mrkirby153.botcore.command.slashcommand.dsl.types.ArgumentBuilder
 data class ArgumentContainer<Type : Any?, ConverterType : Type>(
     internal val converter: ArgumentConverter<ConverterType>,
     val builder: ArgumentBuilder<*>,
-    val required: Boolean
+    val required: Boolean,
+    val default: Type? = null
 )

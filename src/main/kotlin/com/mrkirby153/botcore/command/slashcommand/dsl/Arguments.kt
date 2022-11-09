@@ -31,10 +31,14 @@ open class Arguments {
         val data = mapped[builder.name]
         return when (mapped[builder.name]) {
             null -> {
-                if (required) {
-                    error("${builder.name} was required but is null")
+                if (default != null) {
+                    default
+                } else {
+                    if (required) {
+                        error("${builder.name} was required but is null")
+                    }
+                    null
                 }
-                null
             }
 
             else -> data
