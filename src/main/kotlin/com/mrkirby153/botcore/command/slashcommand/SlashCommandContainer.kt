@@ -71,6 +71,9 @@ open class SlashCommandContainer {
             this.subCommands[it.name] = it
         }
 
+    @JvmName("subCommandNoArguments")
+    fun SlashCommand<Arguments>.subCommand(body: SubCommand<Arguments>.() -> Unit) = subCommand<Arguments>(body)
+
     inline fun <reified T: Arguments> Group.subCommand(body: SubCommand<T>.() -> Unit)  = SubCommand(getInstanceFunction<T>()).apply(body).also { cmd ->
         check(this.commands.none { it.name == name }) { "Duplicate command $name" }
         this.commands.add(cmd)
