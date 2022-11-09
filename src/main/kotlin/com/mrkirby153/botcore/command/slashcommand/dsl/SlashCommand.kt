@@ -30,9 +30,10 @@ open class AbstractSlashCommand<A : Arguments>(
     lateinit var name: String
     lateinit var description: String
 
-    private val checks = mutableListOf<CommandPrerequisiteCheck<A>.() -> Unit>()
+    private var checks = mutableListOf<CommandPrerequisiteCheck<A>.() -> Unit>()
 
     private var evaluatingContexts = false
+    private var checksModified = false
 
     /**
      * Adds a prerequisite check to this slash command. This check is run before the command is
@@ -43,6 +44,8 @@ open class AbstractSlashCommand<A : Arguments>(
      */
     fun check(builder: CommandPrerequisiteCheck<A>.() -> Unit) {
         checks.add(builder)
+        if (evaluatingContexts)
+            checksModified = true
     }
 
     /**
@@ -57,26 +60,39 @@ open class AbstractSlashCommand<A : Arguments>(
         val ctx = SlashContext(this, event)
         ctx.load()
 
-        try {
-            evaluatingContexts = true
-            contexts.forEach {
-                it(ctx.args)
-            }
-        } finally {
-            evaluatingContexts = false
-        }
+        val oldChecks = checks.toMutableList()
+        val oldBody = body
 
-        val checkCtx = CommandPrerequisiteCheck(ctx)
-        checks.forEach {
-            it(checkCtx)
-            if (checkCtx.failed) {
-                return@forEach
+        try {
+
+            try {
+                evaluatingContexts = true
+                contexts.forEach {
+                    it(ctx.args)
+                }
+            } finally {
+                evaluatingContexts = false
             }
+
+            val checkCtx = CommandPrerequisiteCheck(ctx)
+            checks.forEach {
+                it(checkCtx)
+                if (checkCtx.failed) {
+                    return@forEach
+                }
+            }
+            if (checkCtx.failed) {
+                throw CommandException(
+                    checkCtx.failureMessage ?: "Command prerequisites did not pass"
+                )
+            }
+            body?.invoke(ctx)
+        } finally {
+            body = oldBody
+            if (checksModified)
+                checks = oldChecks
+            checksModified = false
         }
-        if (checkCtx.failed) {
-            throw CommandException(checkCtx.failureMessage ?: "Command prerequisites did not pass")
-        }
-        body?.invoke(ctx)
     }
 
     /**
