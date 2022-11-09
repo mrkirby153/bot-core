@@ -245,7 +245,7 @@ class ColorBuilder : Builder<Color?> {
      */
     fun rgb(red: Int, green: Int, blue: Int) {
         color = Color.decode(
-            "${Integer.toHexString(red)}${Integer.toHexString(green)}${
+            "#${Integer.toHexString(red)}${Integer.toHexString(green)}${
                 Integer.toHexString(blue)
             }"
         )
@@ -255,7 +255,11 @@ class ColorBuilder : Builder<Color?> {
      * Sets the color to the provided hex value
      */
     fun hex(string: String) {
-        color = Color.getColor(string)
+        if (!string.startsWith("#")) {
+            color = Color.decode("#$string")
+        } else {
+            color = Color.decode(string)
+        }
     }
 
     override fun build(): Color? = color
