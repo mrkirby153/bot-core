@@ -123,6 +123,10 @@ class EmbedBuilder : Builder<MessageEmbed> {
         val footer = footerBuilder.build()
         setFooter(footer.text, footer.iconUrl)
 
+        this@EmbedBuilder.fields.forEach {
+            addField(it.build())
+        }
+
         setThumbnail(thumbnailBuilder.build())
         setImage(imageBuilder.build()?.url)
         setColor(colorBuilder.build())
