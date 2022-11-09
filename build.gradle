@@ -27,7 +27,7 @@ dependencies {
     implementation 'org.json:json:20220320'
     implementation 'org.jetbrains.kotlin:kotlin-reflect:1.7.0'
     implementation 'com.ibm.icu:icu4j:71.1'
-    compileOnly 'net.dv8tion:JDA:5.0.0-alpha.21'
+    compileOnly 'net.dv8tion:JDA:5.0.0-alpha.22'
 
     // Spring dependencies for autoconfiguration in a spring project
     compileOnly 'org.springframework:spring-context:5.3.20'

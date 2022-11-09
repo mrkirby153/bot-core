@@ -4,7 +4,7 @@ import com.mrkirby153.botcore.builder.ModalBuilder
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
-import net.dv8tion.jda.api.interactions.components.Modal
+import net.dv8tion.jda.api.interactions.modals.Modal
 import net.dv8tion.jda.api.sharding.ShardManager
 import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList

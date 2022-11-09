@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle
 import net.dv8tion.jda.api.interactions.components.selections.SelectMenu
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu
 import net.dv8tion.jda.api.interactions.components.text.TextInput
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle
 import java.util.UUID
@@ -208,7 +209,7 @@ class SelectMenuBuilder(
         if (min > max) {
             throw IllegalArgumentException("Min cannot be greater than max")
         }
-        return SelectMenu.create(id).setRequiredRange(min, max).setPlaceholder(placeholder)
+        return StringSelectMenu.create(id).setRequiredRange(min, max).setPlaceholder(placeholder)
             .setDisabled(!enabled)
             .addOptions(options.map { it.build() }).build()
     }
