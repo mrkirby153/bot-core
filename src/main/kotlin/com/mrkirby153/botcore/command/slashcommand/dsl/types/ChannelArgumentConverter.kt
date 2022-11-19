@@ -5,6 +5,7 @@ import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentConverter
 import com.mrkirby153.botcore.command.slashcommand.dsl.Arguments
 import net.dv8tion.jda.api.entities.channel.Channel
 import net.dv8tion.jda.api.entities.channel.ChannelType
+import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel
 import net.dv8tion.jda.api.entities.channel.concrete.StageChannel
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
@@ -63,6 +64,11 @@ private val threadChannelConverter = ChannelArgumentConverter {
         ?: throw ArgumentParseException("Provided channel was not a thread")
 }
 
+private val forumChannelConverter = ChannelArgumentConverter {
+    it.asChannel as? ForumChannel
+        ?: throw ArgumentParseException("Provided channel was not a forum")
+}
+
 fun Arguments.textChannel(body: ChannelArgumentBuilder<TextChannel>.() -> Unit) =
     ChannelArgumentBuilder(this, textChannelConverter, ChannelType.TEXT).apply(body)
 
@@ -89,7 +95,7 @@ fun Arguments.messageChannel(body: ChannelArgumentBuilder<MessageChannel>.() -> 
     ).apply(body)
 
 fun Arguments.stageChannel(body: ChannelArgumentBuilder<StageChannel>.() -> Unit) =
-    ChannelArgumentBuilder(this, stageChannelConverter, ChannelType.STAGE)
+    ChannelArgumentBuilder(this, stageChannelConverter, ChannelType.STAGE).apply(body)
 
 fun Arguments.thread(body: ChannelArgumentBuilder<ThreadChannel>.() -> Unit) =
     ChannelArgumentBuilder(
@@ -98,4 +104,7 @@ fun Arguments.thread(body: ChannelArgumentBuilder<ThreadChannel>.() -> Unit) =
         ChannelType.GUILD_NEWS_THREAD,
         ChannelType.GUILD_PUBLIC_THREAD,
         ChannelType.GUILD_PRIVATE_THREAD
-    )
+    ).apply(body)
+
+fun Arguments.forum(body: ChannelArgumentBuilder<ForumChannel>.() -> Unit) =
+    ChannelArgumentBuilder(this, forumChannelConverter, ChannelType.FORUM).apply(body)
