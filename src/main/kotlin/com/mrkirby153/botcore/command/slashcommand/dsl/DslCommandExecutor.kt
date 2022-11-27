@@ -325,6 +325,6 @@ class DslCommandExecutor(
     }
 
     fun registerListener(shardManager: ShardManager) {
-        shardManager.addEventListener(shardManager)
+        shardManager.addEventListener(DslCommandExecutorListener())
     }
 }
