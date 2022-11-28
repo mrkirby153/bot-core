@@ -3,7 +3,7 @@ package com.mrkirby153.botcore.command.slashcommand.dsl
 import com.mrkirby153.botcore.builder.MessageBuilder
 import com.mrkirby153.botcore.command.args.ArgumentParseException
 import com.mrkirby153.botcore.command.args.BatchArgumentParseException
-import com.mrkirby153.botcore.log
+import com.mrkirby153.botcore.utils.SLF4J
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent
@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 import net.dv8tion.jda.api.interactions.commands.context.MessageContextInteraction
 import net.dv8tion.jda.api.interactions.commands.context.UserContextInteraction
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction
+import org.slf4j.Logger
 
 /**
  * A [SlashCommandInteraction] with additional fields to interact with the Slash DSL.
@@ -25,6 +26,8 @@ class SlashContext<A : Arguments>(
     val command: AbstractSlashCommand<A>,
     private val event: SlashCommandInteractionEvent
 ) : SlashCommandInteraction by event {
+
+    private val log: Logger by SLF4J
 
     /**
      * The arguments that were provided by the user

@@ -1,7 +1,8 @@
 package com.mrkirby153.botcore.i18n
 
 import com.ibm.icu.text.MessageFormat
-import com.mrkirby153.botcore.log
+import com.mrkirby153.botcore.utils.SLF4J
+import org.slf4j.Logger
 import java.text.FieldPosition
 import java.util.Locale
 import java.util.MissingResourceException
@@ -20,6 +21,8 @@ class ResourceBundleTranslationProvider(
     defaultLocale: () -> Locale,
     private val basePath: String = "i18n"
 ) : TranslationProvider(defaultLocale) {
+
+    private val log: Logger by SLF4J
 
     private val resourceBundles = mutableMapOf<Pair<String, Locale>, ResourceBundle>()
 

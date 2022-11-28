@@ -4,8 +4,8 @@ import com.mrkirby153.botcore.command.CommandException
 import com.mrkirby153.botcore.command.args.BatchArgumentParseException
 import com.mrkirby153.botcore.i18n.TranslationProvider
 import com.mrkirby153.botcore.i18n.TranslationProviderLocalizationFunction
-import com.mrkirby153.botcore.log
 import com.mrkirby153.botcore.utils.PrerequisiteCheck
+import com.mrkirby153.botcore.utils.SLF4J
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
@@ -21,6 +21,7 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData
 import net.dv8tion.jda.api.interactions.commands.context.ContextInteraction
 import net.dv8tion.jda.api.interactions.commands.localization.LocalizationFunction
 import net.dv8tion.jda.api.sharding.ShardManager
+import org.slf4j.Logger
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -41,6 +42,9 @@ class DslCommandExecutor(
     translationBundle: String? = null,
     translationProvider: TranslationProvider? = null
 ) {
+
+    private val log: Logger by SLF4J
+
     internal inner class DslCommandExecutorListener : ListenerAdapter() {
         override fun onSlashCommandInteraction(event: SlashCommandInteractionEvent) {
             this@DslCommandExecutor.onSlashCommandInteraction(event)
@@ -214,7 +218,7 @@ class DslCommandExecutor(
      */
     fun execute(event: SlashCommandInteractionEvent) {
         val cmd = getSlashCommand(event) ?: return
-        log.trace("Executing slash command ${event.commandPath}")
+        log.trace("Executing slash command ${event.fullCommandName}")
         val checkCtx = PrerequisiteCheck(cmd)
         globalChecks.forEach {
             it(checkCtx)
@@ -252,7 +256,7 @@ class DslCommandExecutor(
      */
     fun handleAutocomplete(event: CommandAutoCompleteInteractionEvent) {
         val cmd = getSlashCommand(event) ?: return
-        log.trace("Handling autocomplete for {}", event.commandPath)
+        log.trace("Handling autocomplete for {}", event.fullCommandName)
         val options = cmd.handleAutocomplete(event)
         log.trace("Suggested options: [{}]", options.joinToString(",") { it.name })
         event.replyChoices(options).queue()
