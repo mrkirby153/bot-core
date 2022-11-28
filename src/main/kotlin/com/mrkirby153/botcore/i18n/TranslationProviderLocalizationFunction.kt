@@ -17,16 +17,19 @@ class TranslationProviderLocalizationFunction(
         log.debug("Localizing command with key $localizationKey")
         val results = DiscordLocale.values().filter {
             it != DiscordLocale.UNKNOWN && provider.canTranslate(
-                TranslatableMessage.translatable(bundle, localizationKey), it.asJavaLocale()
+                Translatable(bundle, localizationKey), it.asJavaLocale()
             )
         }.associateWith {
             provider.translate(
-                TranslatableMessage.translatable(bundle, localizationKey), it.asJavaLocale()
+                Translatable(bundle, localizationKey), it.asJavaLocale()
             )
         }
         println("$localizationKey -> $results")
         return results
     }
+
+    private data class Translatable(override val bundle: String, override val key: String) :
+        TranslationKey
 }
 
 private fun DiscordLocale.asJavaLocale() = Locale.forLanguageTag(this.locale)

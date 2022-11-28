@@ -20,7 +20,7 @@ abstract class TranslationProvider(
      * into the message. The message is expected to be ICU compatible.
      */
     abstract fun translate(
-        component: TranslatableMessage,
+        component: TranslationKey,
         locale: Locale,
         substitutions: Map<String, Any?>
     ): String
@@ -31,7 +31,7 @@ abstract class TranslationProvider(
      */
     @JvmOverloads
     open fun translate(
-        component: TranslatableMessage,
+        component: TranslationKey,
         locale: Locale = defaultLocale,
         substitutions: Array<Any?> = arrayOf()
     ): String {
@@ -43,19 +43,19 @@ abstract class TranslationProvider(
     /**
      * Translates the provided [component] into the [defaultLocale], substituting any [substitutions]
      */
-    open fun translate(component: TranslatableMessage, substitutions: Array<Any?> = arrayOf()) =
+    open fun translate(component: TranslationKey, substitutions: Array<Any?> = arrayOf()) =
         translate(component, defaultLocale, substitutions)
 
     /**
      * Translates the provided [component] into the [defaultLocale], substituting any [substitutions]
      */
     open fun translate(
-        component: TranslatableMessage,
+        component: TranslationKey,
         substitutions: Map<String, Any?>
     ) = translate(component, defaultLocale, substitutions)
 
     /**
      * Returns true if the provided [component] can be translated into the given [locale]
      */
-    abstract fun canTranslate(component: TranslatableMessage, locale: Locale): Boolean
+    abstract fun canTranslate(component: TranslationKey, locale: Locale): Boolean
 }

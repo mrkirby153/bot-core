@@ -26,8 +26,14 @@ class ResourceBundleTranslationProvider(
 
     private val resourceBundles = mutableMapOf<Pair<String, Locale>, ResourceBundle>()
 
+    @JvmOverloads
+    constructor(defaultLocale: Locale = Locale.getDefault(), basePath: String = "i18n") : this(
+        { defaultLocale },
+        basePath
+    )
+
     override fun translate(
-        component: TranslatableMessage,
+        component: TranslationKey,
         locale: Locale,
         substitutions: Map<String, Any?>
     ): String {
@@ -42,11 +48,11 @@ class ResourceBundleTranslationProvider(
         return formatter.format(substitutions, StringBuffer(), FieldPosition(1)).toString()
     }
 
-    override fun canTranslate(component: TranslatableMessage, locale: Locale): Boolean {
+    override fun canTranslate(component: TranslationKey, locale: Locale): Boolean {
         return getMessage(component, locale) != null
     }
 
-    private fun getMessage(component: TranslatableMessage, locale: Locale): String? {
+    private fun getMessage(component: TranslationKey, locale: Locale): String? {
         log.trace("Retrieving $component (locale: $locale)")
         val bundle = getResourceBundle(component.bundle, locale)
         val overrideBundle = getResourceBundle("${component.bundle}_override", locale)
