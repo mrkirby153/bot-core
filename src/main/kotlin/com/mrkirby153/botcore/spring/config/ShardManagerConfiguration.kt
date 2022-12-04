@@ -62,6 +62,8 @@ open class ShardManagerConfiguration(
     private var botReady = false
     private var appReady = false
 
+    private val readyLock = Any()
+
     @Bean
     @ConditionalOnMissingBean
     open fun defaultShardManagerBuilder() = DefaultShardManagerBuilder.createDefault(token).also {
@@ -107,8 +109,10 @@ open class ShardManagerConfiguration(
 
     @EventListener
     fun onAppReady(event: ApplicationReadyEvent) {
-        appReady = true
-        maybeDispatchReadyEvent()
+        synchronized(readyLock) {
+            appReady = true
+            maybeDispatchReadyEvent()
+        }
     }
 
     private fun handleShardReady(shardManager: ShardManager, listener: ShardReadyListener) {
@@ -116,12 +120,14 @@ open class ShardManagerConfiguration(
         val totalShards = shardManager.shards.size
         val readyShards = shardManager.shards.stream()
             .filter { jda -> jda.status === JDA.Status.CONNECTED }.count() + 1
-        if (totalShards.toLong() == readyShards) {
+        if (readyShards >= totalShards) {
             log.info("All shards ready!")
             shardManager.setStatus(OnlineStatus.ONLINE)
             shardManager.setActivity(null)
-            botReady = true
-            maybeDispatchReadyEvent()
+            synchronized(readyLock) {
+                botReady = true
+                maybeDispatchReadyEvent()
+            }
             shardManager.removeEventListener(listener)
         } else {
             log.info("{}/{} shards ready", readyShards, totalShards)
