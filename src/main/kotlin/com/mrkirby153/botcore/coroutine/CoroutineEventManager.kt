@@ -74,8 +74,10 @@ open class CoroutineEventManager(
     override fun handle(event: GenericEvent) {
         launch {
             listeners.forEach { listener ->
+                log.debug("Executing listener $listener")
                 try {
                     val timeout = (listener as? CoroutineEventListener)?.run { getTimeout(this) }
+                    log.debug("Timeout $timeout")
                     if (timeout != null) {
                         val result = withTimeoutOrNull(timeout) {
                             runListener(listener, event)
