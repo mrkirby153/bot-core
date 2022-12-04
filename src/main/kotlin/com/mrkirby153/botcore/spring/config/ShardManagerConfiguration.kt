@@ -111,17 +111,20 @@ open class ShardManagerConfiguration(
         maybeDispatchReadyEvent()
     }
 
-    private fun handleShardReady(manager: ShardManager, listener: ShardReadyListener) {
-        val allReady = manager.shards.none { it.status != JDA.Status.CONNECTED }
-        if (allReady) {
-            log.info("All shards are ready")
-            manager.setStatus(OnlineStatus.ONLINE)
-            manager.setActivity(null)
-            manager.removeEventListener(listener)
+    private fun handleShardReady(shardManager: ShardManager, listener: ShardReadyListener) {
+        log.debug("Handling shard ready event")
+        val totalShards = shardManager.shards.size
+        val readyShards = shardManager.shards.stream()
+            .filter { jda -> jda.status === JDA.Status.CONNECTED }.count() + 1
+        if (totalShards.toLong() == readyShards) {
+            log.info("All shards ready!")
+            shardManager.setStatus(OnlineStatus.ONLINE)
+            shardManager.setActivity(null)
             botReady = true
             maybeDispatchReadyEvent()
+            shardManager.removeEventListener(listener)
         } else {
-            log.info("Waiting for ${manager.shards.count { it.status != JDA.Status.CONNECTED }} shards to become ready...")
+            log.info("{}/{} shards ready", readyShards, totalShards)
         }
     }
 
