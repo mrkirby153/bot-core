@@ -63,7 +63,6 @@ open class CoroutineEventManager(
 
     private fun getTimeout(listener: CoroutineEventListener): Long? {
         val listenerTimeout = listener.timeout()
-        println(listenerTimeout.timeout)
         if (listenerTimeout == EventTimeout.Inherit) {
             return if (timeout == EventTimeout.Infinite) return null else timeout.timeout
         } else {
