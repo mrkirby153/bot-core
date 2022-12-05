@@ -27,6 +27,7 @@ suspend inline fun <reified T : GenericEvent> ShardManager.await(crossinline fil
             removeEventListener(listener)
         }
     }
+
 /**
  * Waits for the given event [T] that matches the [filter]
  */

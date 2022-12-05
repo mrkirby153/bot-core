@@ -25,6 +25,13 @@ import kotlin.coroutines.EmptyCoroutineContext
 
 private val log by SLF4J("CoroutineEventManager")
 
+internal var didEnableCoroutines = false
+val JDA.coroutinesEnabled: Boolean
+    get() = didEnableCoroutines
+
+val ShardManager.coroutinesEnabled: Boolean
+    get() = didEnableCoroutines
+
 fun getDefaultScope(
     pool: Executor? = null,
     job: Job? = null,
@@ -107,13 +114,18 @@ open class CoroutineEventManager(
 /**
  * Sets the event manager to a [CoroutineEventManager] dispatching events in coroutines
  */
-fun JDABuilder.enableCoroutines() = setEventManager(CoroutineEventManager())
+fun JDABuilder.enableCoroutines() =
+    setEventManager(CoroutineEventManager()).addEventListeners(FlowEventListener).also {
+        didEnableCoroutines = true
+    }
 
 /**
  * Sets the event manager to a [CoroutineEventManager] dispatching events in coroutines
  */
 fun DefaultShardManagerBuilder.enableCoroutines() =
-    setEventManagerProvider { CoroutineEventManager() }
+    setEventManagerProvider { CoroutineEventManager() }.addEventListeners(FlowEventListener).also {
+        didEnableCoroutines = true
+    }
 
 /**
  * Listens for the given event [T]. Specify [timeout] to have these coroutines time out after a duration
@@ -122,6 +134,7 @@ inline fun <reified T : GenericEvent> JDA.on(
     timeout: Duration? = null,
     crossinline consumer: suspend CoroutineEventListener.(T) -> Unit
 ): CoroutineEventListener {
+    require(coroutinesEnabled) { "Coroutines are not enabled" }
     return object : CoroutineEventListener {
         override fun timeout(): EventTimeout {
             return timeout?.run { EventTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS) }
@@ -146,6 +159,7 @@ inline fun <reified T : GenericEvent> ShardManager.on(
     timeout: Duration? = null,
     crossinline consumer: suspend CoroutineEventListener.(T) -> Unit
 ): CoroutineEventListener {
+    require(coroutinesEnabled) { "Coroutines are not enabled" }
     return object : CoroutineEventListener {
         override fun timeout(): EventTimeout {
             return timeout?.run { EventTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS) }
