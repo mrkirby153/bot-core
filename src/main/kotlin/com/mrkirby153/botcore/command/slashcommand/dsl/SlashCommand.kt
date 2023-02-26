@@ -2,6 +2,7 @@ package com.mrkirby153.botcore.command.slashcommand.dsl
 
 import com.mrkirby153.botcore.command.CommandException
 import com.mrkirby153.botcore.utils.PrerequisiteCheck
+import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
@@ -26,6 +27,7 @@ open class AbstractSlashCommand<A : Arguments>(
     private val arguments: (() -> A)?
 ) {
     internal var body: (SlashContext<A>.() -> Unit)? = null
+    internal var coroAction: (suspend SlashContext<A>.() -> Unit)? = null
     private var contexts = mutableListOf<(A.() -> Unit)>()
     lateinit var name: String
     lateinit var description: String
@@ -87,6 +89,9 @@ open class AbstractSlashCommand<A : Arguments>(
                 )
             }
             body?.invoke(ctx)
+            runBlocking {
+                coroAction?.invoke(ctx)
+            }
         } finally {
             body = oldBody
             if (checksModified)
@@ -148,10 +153,13 @@ class SlashCommand<A : Arguments>(
      * Defines the action run when this slash command is invoked
      */
     fun action(action: SlashContext<A>.() -> Unit) {
-        if (groups.isNotEmpty()) {
-            throw IllegalArgumentException("Cannot mix groups and non-grouped commands")
-        }
+        check(groups.isEmpty()) { "Cannot mix groups and non-grouped commands" }
         this.body = action
+    }
+
+    fun run(action: suspend SlashContext<A>.() -> Unit) {
+        check(groups.isEmpty()) { "Cannot mix groups and non-grouped commands" }
+        this.coroAction = action
     }
 
     /**
