@@ -17,7 +17,10 @@ open class Translations(val bundle: String)
  * @param bundle The resource bundle
  * @param key The key in the resource bundle
  */
-data class TranslatableMessage internal constructor(val bundle: String, val key: String) {
+data class TranslatableMessage internal constructor(
+    override val bundle: String,
+    override val key: String
+) : TranslationKey {
     companion object {
         /**
          * Java helper function for creating [TranslatableMessage]
