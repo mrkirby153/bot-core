@@ -38,10 +38,11 @@ import java.util.concurrent.CompletableFuture
  * @param translationBundle An optional translation bundle to retrieve command localizations from
  * @param translationProvider An optional translation provider to retrieve command localizations from
  */
-class DslCommandExecutor(
-    translationBundle: String? = null,
-    translationProvider: TranslationProvider? = null
+class DslCommandExecutor private constructor(
+    translationBundle: String?,
+    translationProvider: TranslationProvider?
 ) {
+    constructor() : this(null, null)
 
     private val log: Logger by SLF4J
 
@@ -330,5 +331,12 @@ class DslCommandExecutor(
 
     fun registerListener(shardManager: ShardManager) {
         shardManager.addEventListener(DslCommandExecutorListener())
+    }
+
+    companion object {
+
+        fun translatable(bundle: String, provider: TranslationProvider): DslCommandExecutor {
+            return DslCommandExecutor(bundle, provider)
+        }
     }
 }
