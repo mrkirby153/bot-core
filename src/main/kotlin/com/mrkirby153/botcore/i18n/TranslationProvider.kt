@@ -54,6 +54,12 @@ abstract class TranslationProvider(
         substitutions: Map<String, Any?>
     ) = translate(component, defaultLocale, substitutions)
 
+    open fun translate(
+        component: TranslationKey,
+        locale: Locale,
+        vararg substitutions: Pair<String, Any?>
+    ) = translate(component, locale, substitutions.toMap())
+
     /**
      * Returns true if the provided [component] can be translated into the given [locale]
      */
