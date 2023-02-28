@@ -32,7 +32,7 @@ open class ArgumentBuilder<T : Any>(
         autoCompleteCallback = callback
     }
 
-    internal open fun createOption(): OptionData =
+    open fun createOption(): OptionData =
         OptionData(converter.type, name, description).apply {
             isAutoComplete = autoCompleteCallback != null
             log.trace("Created option $name ($description) with type $type. Autocomplete? $isAutoComplete")
