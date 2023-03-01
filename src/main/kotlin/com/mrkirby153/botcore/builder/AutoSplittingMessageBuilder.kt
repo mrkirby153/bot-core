@@ -52,6 +52,20 @@ class AutoSplittingMessageBuilder(private val maxCharactersPerMessage: Int = 199
                         second
                 }
             }
+
+            SplitMode.BREAK_WORD -> {
+                // Break at the closest word
+                val parts = string.split(" ")
+                parts.forEach { word ->
+                    check(word.length <= maxCharactersPerMessage) { "Cannot append $word to message, as its length is greater than the maximum allowed per message" }
+                    buffer += if (maxCharactersPerMessage - buffer.length - word.length >= 0) {
+                        " $word"
+                    } else {
+                        splitMessage()
+                        word
+                    }
+                }
+            }
         }
     }
 
@@ -85,5 +99,6 @@ class AutoSplittingMessageBuilder(private val maxCharactersPerMessage: Int = 199
 
 enum class SplitMode {
     WHOLE_LINE,
-    BREAK_LINE
+    BREAK_LINE,
+    BREAK_WORD
 }
