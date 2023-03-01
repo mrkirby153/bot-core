@@ -8,8 +8,9 @@ import kotlin.reflect.KProperty
  * with the provided [bundle].
  *
  * @param bundle The name of the bundle for all translatable messages in this class
+ * @param prefix The prefix that is applied to all keys
  */
-open class Translations(val bundle: String)
+open class Translations(val bundle: String, val prefix: String? = null)
 
 /**
  * Data class for translatable messages. Stores the bundle and key of the message for translation.
@@ -48,4 +49,5 @@ class MessageTranslation(private val key: String) {
  * [Translations] class. The constructed [MessageTranslation] will inherit the [Translations.bundle]
  * from the parent [Translations] class
  */
-fun Translations.translatable(key: String) = MessageTranslation(key)
+fun Translations.translatable(key: String) =
+    MessageTranslation(if (prefix != null) "$prefix$key" else key)
