@@ -9,6 +9,12 @@ import net.dv8tion.jda.api.entities.User
 import java.awt.Color
 import java.time.OffsetDateTime
 
+
+/**
+ * Creates a new embed
+ */
+fun embed(builder: EmbedBuilder.() -> Unit) = EmbedBuilder().apply(builder).build()
+
 /**
  * DSL marker for embeds
  */
