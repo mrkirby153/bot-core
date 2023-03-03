@@ -24,7 +24,6 @@ class TranslationProviderLocalizationFunction(
                 Translatable(bundle, localizationKey), it.asJavaLocale()
             )
         }
-        println("$localizationKey -> $results")
         return results
     }
 
