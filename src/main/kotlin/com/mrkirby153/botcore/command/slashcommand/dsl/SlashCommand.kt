@@ -219,4 +219,8 @@ class SubCommand<A : Arguments>(arguments: (() -> A)? = null) :
     fun action(action: SlashContext<A>.() -> Unit) {
         this.body = action
     }
+
+    fun run(action: suspend SlashContext<A>.() -> Unit) {
+        this.coroAction = action
+    }
 }
