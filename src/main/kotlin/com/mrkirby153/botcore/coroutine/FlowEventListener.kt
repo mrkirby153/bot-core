@@ -1,5 +1,7 @@
 package com.mrkirby153.botcore.coroutine
 
+import com.mrkirby153.botcore.utils.SLF4J
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -27,8 +29,12 @@ val events: Flow<GenericEvent>
         return sharedFlow
     }
 
+private val log by SLF4J("EventListenerScope")
+
 private object DefaultEventListenerScope :
-    CoroutineScope by CoroutineScope(Dispatchers.Default + SupervisorJob() + EmptyCoroutineContext)
+    CoroutineScope by CoroutineScope(Dispatchers.Default + SupervisorJob() + EmptyCoroutineContext + CoroutineExceptionHandler { ctx, err ->
+        log.error("Coroutine raised exception", err)
+    })
 
 /**
  * Launches the flow in a coroutine scope shared by all event handlers
