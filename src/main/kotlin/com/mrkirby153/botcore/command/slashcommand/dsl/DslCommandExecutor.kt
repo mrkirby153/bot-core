@@ -2,17 +2,23 @@ package com.mrkirby153.botcore.command.slashcommand.dsl
 
 import com.mrkirby153.botcore.command.CommandException
 import com.mrkirby153.botcore.command.args.BatchArgumentParseException
+import com.mrkirby153.botcore.coroutine.CoroutineEventListener
 import com.mrkirby153.botcore.i18n.TranslationProvider
 import com.mrkirby153.botcore.i18n.TranslationProviderLocalizationFunction
 import com.mrkirby153.botcore.utils.PrerequisiteCheck
 import com.mrkirby153.botcore.utils.SLF4J
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.events.GenericEvent
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent
-import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.interactions.commands.Command
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
 import net.dv8tion.jda.api.interactions.commands.build.Commands
@@ -23,6 +29,7 @@ import net.dv8tion.jda.api.interactions.commands.localization.LocalizationFuncti
 import net.dv8tion.jda.api.sharding.ShardManager
 import org.slf4j.Logger
 import java.util.concurrent.CompletableFuture
+import kotlin.coroutines.EmptyCoroutineContext
 
 /**
  * Command executor for Kotlin based DSL slash commands.
@@ -45,26 +52,6 @@ class DslCommandExecutor private constructor(
     constructor() : this(null, null)
 
     private val log: Logger by SLF4J
-
-    internal inner class DslCommandExecutorListener : ListenerAdapter() {
-        override fun onSlashCommandInteraction(event: SlashCommandInteractionEvent) {
-            this@DslCommandExecutor.onSlashCommandInteraction(event)
-        }
-
-        override fun onCommandAutoCompleteInteraction(event: CommandAutoCompleteInteractionEvent) {
-            this@DslCommandExecutor.onCommandAutoCompleteInteraction(event)
-        }
-
-        override fun onUserContextInteraction(event: UserContextInteractionEvent) {
-            this@DslCommandExecutor.onUserContextInteraction(event)
-        }
-
-        override fun onMessageContextInteraction(event: MessageContextInteractionEvent) {
-            this@DslCommandExecutor.onMessageContextInteraction(event)
-        }
-    }
-
-    internal val listener: DslCommandExecutorListener = DslCommandExecutorListener()
 
     private val registeredCommands = mutableMapOf<String, SlashCommand<out Arguments>>()
     private val userContextCommands = mutableListOf<UserContextCommand>()
@@ -217,7 +204,7 @@ class DslCommandExecutor private constructor(
     /**
      * Executes a slash command from the provided [event]
      */
-    fun execute(event: SlashCommandInteractionEvent) {
+    suspend fun execute(event: SlashCommandInteractionEvent, scope: CoroutineScope) {
         val cmd = getSlashCommand(event) ?: return
         log.trace("Executing slash command ${event.fullCommandName}")
         val checkCtx = PrerequisiteCheck(cmd)
@@ -233,7 +220,7 @@ class DslCommandExecutor private constructor(
             return
         }
         try {
-            cmd.execute(event)
+            cmd.execute(event, scope)
         } catch (e: CommandException) {
             event.reply(":no_entry: ${e.message ?: "An unknown error occurred!"}")
                 .setEphemeral(true).queue()
@@ -307,30 +294,50 @@ class DslCommandExecutor private constructor(
         body(this)
     }
 
-    fun onSlashCommandInteraction(event: SlashCommandInteractionEvent) {
-        if (getSlashCommand(event) != null)
-            execute(event)
+
+    inner class Listener(dispatcher: CoroutineDispatcher) :
+        CoroutineEventListener {
+
+        private val scope =
+            CoroutineScope(dispatcher + SupervisorJob() + EmptyCoroutineContext)
+
+        override suspend fun onEvent(event: GenericEvent) {
+            when (event) {
+                is SlashCommandInteractionEvent -> {
+                    if (getSlashCommand(event) != null) {
+                        scope.launch {
+                            execute(event, this)
+                        }
+                    }
+                }
+
+                is CommandAutoCompleteInteractionEvent -> {
+                    if (getSlashCommand(event) != null) {
+                        scope.launch {
+                            handleAutocomplete(event)
+                        }
+                    }
+                }
+
+                is UserContextInteractionEvent -> {
+                    scope.launch {
+                        userContextCommands.firstOrNull { it.name == event.name }
+                            ?.execute(UserContext(event))
+                    }
+                }
+
+                is MessageContextInteractionEvent -> {
+                    scope.launch {
+                        messageContextCommands.firstOrNull { it.name == event.name }
+                            ?.execute(MessageContext(event))
+                    }
+                }
+            }
+        }
     }
 
-    fun onCommandAutoCompleteInteraction(event: CommandAutoCompleteInteractionEvent) {
-        if (getSlashCommand(event) != null)
-            handleAutocomplete(event)
-    }
-
-    fun onUserContextInteraction(event: UserContextInteractionEvent) {
-        userContextCommands.firstOrNull { it.name == event.name }?.execute(UserContext(event))
-    }
-
-    fun onMessageContextInteraction(event: MessageContextInteractionEvent) {
-        messageContextCommands.firstOrNull { it.name == event.name }?.execute(MessageContext(event))
-    }
-
-    fun registerListener(jda: JDA) {
-        jda.addEventListener(listener)
-    }
-
-    fun registerListener(shardManager: ShardManager) {
-        shardManager.addEventListener(DslCommandExecutorListener())
+    fun getListener(dispatcher: CoroutineDispatcher = Dispatchers.Default): Listener {
+        return Listener(dispatcher)
     }
 
     companion object {

@@ -4,6 +4,7 @@ import com.mrkirby153.botcore.builder.MessageBuilder
 import com.mrkirby153.botcore.command.args.ArgumentParseException
 import com.mrkirby153.botcore.command.args.BatchArgumentParseException
 import com.mrkirby153.botcore.utils.SLF4J
+import kotlinx.coroutines.CoroutineScope
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent
@@ -24,8 +25,9 @@ import org.slf4j.Logger
 @SlashDsl
 class SlashContext<A : Arguments>(
     val command: AbstractSlashCommand<A>,
-    private val event: SlashCommandInteractionEvent
-) : SlashCommandInteraction by event {
+    private val event: SlashCommandInteractionEvent,
+    private val coroutineScope: CoroutineScope
+) : SlashCommandInteraction by event, CoroutineScope by coroutineScope {
 
     private val log: Logger by SLF4J
 
