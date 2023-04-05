@@ -1,7 +1,5 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl
 
-import com.mrkirby153.botcore.command.CommandException
-import com.mrkirby153.botcore.command.args.BatchArgumentParseException
 import com.mrkirby153.botcore.coroutine.CoroutineEventListener
 import com.mrkirby153.botcore.i18n.TranslationProvider
 import com.mrkirby153.botcore.i18n.TranslationProviderLocalizationFunction

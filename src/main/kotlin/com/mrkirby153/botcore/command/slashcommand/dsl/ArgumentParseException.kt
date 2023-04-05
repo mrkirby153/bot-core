@@ -1,4 +1,4 @@
-package com.mrkirby153.botcore.command.args
+package com.mrkirby153.botcore.command.slashcommand.dsl
 
 /**
  * An exception that's thrown if an error occurs when parsing an argument

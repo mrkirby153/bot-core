@@ -1,6 +1,6 @@
 package com.mrkirby153.botcore.testbot.command
 
-import com.mrkirby153.botcore.command.slashcommand.SlashCommandContainer
+import com.mrkirby153.botcore.command.slashcommand.dsl.SlashCommandContainer
 import com.mrkirby153.botcore.command.slashcommand.dsl.Arguments
 import com.mrkirby153.botcore.command.slashcommand.dsl.DslCommandExecutor
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.string

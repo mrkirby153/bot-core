@@ -1,6 +1,5 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl
 
-import com.mrkirby153.botcore.command.CommandException
 import com.mrkirby153.botcore.utils.PrerequisiteCheck
 import kotlinx.coroutines.CoroutineScope
 import net.dv8tion.jda.api.Permission

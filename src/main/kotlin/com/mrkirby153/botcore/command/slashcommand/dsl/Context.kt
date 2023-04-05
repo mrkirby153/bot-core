@@ -1,8 +1,6 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl
 
 import com.mrkirby153.botcore.builder.MessageBuilder
-import com.mrkirby153.botcore.command.args.ArgumentParseException
-import com.mrkirby153.botcore.command.args.BatchArgumentParseException
 import com.mrkirby153.botcore.utils.SLF4J
 import kotlinx.coroutines.CoroutineScope
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent

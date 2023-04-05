@@ -1,12 +1,5 @@
-package com.mrkirby153.botcore.command.slashcommand
+package com.mrkirby153.botcore.command.slashcommand.dsl
 
-import com.mrkirby153.botcore.command.slashcommand.dsl.Arguments
-import com.mrkirby153.botcore.command.slashcommand.dsl.DslCommandExecutor
-import com.mrkirby153.botcore.command.slashcommand.dsl.Group
-import com.mrkirby153.botcore.command.slashcommand.dsl.SlashCommand
-import com.mrkirby153.botcore.command.slashcommand.dsl.SubCommand
-import com.mrkirby153.botcore.command.slashcommand.dsl.group
-import com.mrkirby153.botcore.command.slashcommand.dsl.subCommand
 import java.lang.reflect.Constructor
 
 /**

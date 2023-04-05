@@ -1,6 +1,6 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl.types
 
-import com.mrkirby153.botcore.command.args.ArgumentParseException
+import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentParseException
 import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentConverter
 import com.mrkirby153.botcore.command.slashcommand.dsl.Arguments
 import net.dv8tion.jda.api.interactions.commands.Command
