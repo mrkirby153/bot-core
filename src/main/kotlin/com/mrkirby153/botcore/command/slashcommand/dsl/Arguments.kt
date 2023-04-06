@@ -23,19 +23,21 @@ open class Arguments {
 
     internal fun addMappedValue(name: String, value: Any?) = mapped.put(name, value)
 
-    @Suppress("UNCHECKED_CAST")
     operator fun <T : Any?, U : T> ArgumentContainer<T, U>.getValue(
         o: Arguments,
         desc: KProperty<*>
-    ): T {
-        val data = mapped[builder.name]
-        return when (mapped[builder.name]) {
+    ) = getValue<T>(this)
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> getValue(argumentContainer: ArgumentContainer<*, *>): T {
+        val data = mapped[argumentContainer.builder.name]
+        return when (mapped[argumentContainer.builder.name]) {
             null -> {
-                if (default != null) {
-                    default
+                if (argumentContainer.default != null) {
+                    argumentContainer.default
                 } else {
-                    if (required) {
-                        error("${builder.name} was required but is null")
+                    if (argumentContainer.required) {
+                        error("${argumentContainer.builder.name} was required but is null")
                     }
                     null
                 }
@@ -43,5 +45,15 @@ open class Arguments {
 
             else -> data
         } as T
+    }
+
+    override fun toString(): String {
+        return buildString {
+            append("Arguments(")
+            append(arguments.joinToString(",") {
+                "${it.builder.name}=${getValue<Any?>(it)}"
+            })
+            append(")")
+        }
     }
 }
