@@ -1,8 +1,9 @@
 package com.mrkirby153.botcore.testbot.command
 
-import com.mrkirby153.botcore.command.slashcommand.dsl.SlashCommandContainer
 import com.mrkirby153.botcore.command.slashcommand.dsl.Arguments
 import com.mrkirby153.botcore.command.slashcommand.dsl.DslCommandExecutor
+import com.mrkirby153.botcore.command.slashcommand.dsl.SlashCommandContainer
+import com.mrkirby153.botcore.command.slashcommand.dsl.types.choices
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.string
 import com.mrkirby153.botcore.coroutine.await
 import com.mrkirby153.botcore.utils.SLF4J
@@ -18,6 +19,22 @@ class TestCommands : SlashCommandContainer() {
             name = "arg1"
             description = "Argument 1"
         }.required()
+    }
+
+    class ChoicesArguments : Arguments() {
+        val arg1 by choices(choices = listOf("one", "two", "three")) {
+            name = "arg1"
+            description = "Argument 1"
+        }.required()
+        val arg2 by choices(choiceProvider = {
+            val str = it.focusedOption.value
+            if (str.isNotEmpty()) {
+                return@choices listOf(str.reversed() to str.reversed())
+            } else return@choices emptyList()
+        }) {
+            name = "arg2"
+            description = "Argument 2"
+        }.optional("testing")
     }
 
     fun register(executor: DslCommandExecutor) {
@@ -45,6 +62,13 @@ class TestCommands : SlashCommandContainer() {
                     job1.join()
                     job2.join()
                     hook.editOriginal("Done!").await()
+                }
+            }
+            slashCommand<ChoicesArguments> {
+                name = "choices"
+                description = "Choices"
+                run {
+                    reply("You provided $args: ${args.arg1} ${args.arg2}").await()
                 }
             }
         }

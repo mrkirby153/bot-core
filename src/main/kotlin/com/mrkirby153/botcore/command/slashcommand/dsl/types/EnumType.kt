@@ -1,8 +1,9 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl.types
 
-import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentParseException
 import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentConverter
+import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentParseException
 import com.mrkirby153.botcore.command.slashcommand.dsl.Arguments
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.Command
 import net.dv8tion.jda.api.interactions.commands.OptionMapping
 import net.dv8tion.jda.api.interactions.commands.OptionType
@@ -54,3 +55,44 @@ inline fun <reified T : Enum<T>> Arguments.enum(body: EnumArgumentBuilder<T>.() 
     }
     return EnumArgumentBuilder(this, getter, enumValues()).apply(body)
 }
+
+
+typealias ChoiceProvider = (CommandAutoCompleteInteractionEvent) -> List<Pair<String, String>>
+
+class ChoicesArgumentBuilder(
+    inst: Arguments,
+    private val choices: List<String>? = null,
+    choiceProvider: (ChoiceProvider)? = null
+) : ArgumentBuilder<String>(inst, StringConverter) {
+
+    init {
+        if (choices == null && choiceProvider == null) {
+            error("One of choices or choiceProvider must be specified")
+        }
+        if (choices != null && choiceProvider != null) {
+            error("Both choices and choiceProvider cannot be specified")
+        }
+
+        if (choiceProvider != null) {
+            super.autocomplete {
+                choiceProvider.invoke(it)
+            }
+        }
+    }
+
+    override fun autocomplete(callback: AutoCompleteCallback) {
+        error("Custom autocomplete is not supported")
+    }
+
+    override fun createOption() = super.createOption().apply {
+        if (this@ChoicesArgumentBuilder.choices != null) {
+            addChoices(this@ChoicesArgumentBuilder.choices.map { Command.Choice(it, it) })
+        }
+    }
+}
+
+inline fun Arguments.choices(
+    choices: List<String>? = null,
+    noinline choiceProvider: ChoiceProvider? = null,
+    body: ArgumentBuilder<String>.() -> Unit
+) = ChoicesArgumentBuilder(this, choices, choiceProvider).apply(body)

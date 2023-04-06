@@ -28,7 +28,7 @@ open class ArgumentBuilder<T : Any>(
     fun optional(default: T) =
         ArgumentContainer(converter, this, false, default).also { inst.addArgument(it) }
 
-    fun autocomplete(callback: AutoCompleteCallback) {
+    open fun autocomplete(callback: AutoCompleteCallback) {
         autoCompleteCallback = callback
     }
 
