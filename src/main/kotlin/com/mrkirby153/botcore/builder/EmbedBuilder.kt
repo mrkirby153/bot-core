@@ -142,6 +142,7 @@ class EmbedBuilder : Builder<MessageEmbed> {
 /**
  * The builder for an embed's thumbnail
  */
+@EmbedDsl
 class ThumbnailBuilder : Builder<String?> {
     /**
      * The URL to show in the thumbnail
@@ -175,6 +176,7 @@ class FieldBuilder : Builder<Field> {
 /**
  * An embed's [AuthorInfo] builder
  */
+@EmbedDsl
 class AuthorBuilder : Builder<AuthorInfo> {
     /**
      * The name of the author
@@ -205,6 +207,7 @@ class AuthorBuilder : Builder<AuthorInfo> {
 /**
  * An Embed's [Footer] builder
  */
+@EmbedDsl
 class FooterBuilder : Builder<Footer> {
 
     /**
@@ -231,6 +234,7 @@ class FooterBuilder : Builder<Footer> {
 /**
  * An embed's [ImageInfo] builder
  */
+@EmbedDsl
 class ImageBuilder : Builder<ImageInfo?> {
     /**
      * The URL of the image
@@ -244,6 +248,7 @@ class ImageBuilder : Builder<ImageInfo?> {
 /**
  * A builder for an Embed's color
  */
+@EmbedDsl
 class ColorBuilder : Builder<Color?> {
     /**
      * The color of the embed
