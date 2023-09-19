@@ -50,8 +50,7 @@ inline fun <T : Arguments> DslCommandExecutor.slashCommand(
  *
  * @see [slashCommand]
  */
-inline fun DslCommandExecutor.slashCommand(body: SlashCommand<Arguments>.() -> Unit) =
-    this.register(slashCommand(::Arguments, body))
+inline fun DslCommandExecutor.slashCommand(body: SlashCommand<Arguments>.() -> Unit) = slashCommand(::Arguments, body)
 
 /**
  * Declares a message context command
