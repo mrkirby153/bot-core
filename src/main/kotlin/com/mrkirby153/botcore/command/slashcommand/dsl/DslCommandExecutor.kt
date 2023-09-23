@@ -109,6 +109,7 @@ class DslCommandExecutor private constructor(
                     setLocalizationFunction(localizationFunction)
                 }
             }
+            commandData.defaultPermissions = cmd.commandPermissions
             if (cmd.subCommands.isNotEmpty()) {
                 commandData.addSubcommands(cmd.subCommands.map { (_, sub) ->
                     SubcommandData(sub.name, sub.description).apply {

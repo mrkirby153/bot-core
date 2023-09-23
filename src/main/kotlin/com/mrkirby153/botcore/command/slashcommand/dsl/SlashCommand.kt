@@ -24,7 +24,17 @@ open class AbstractSlashCommand(
     }
 
     internal fun handleAutocomplete(event: CommandAutoCompleteInteractionEvent): List<Command.Choice> {
-        TODO()
+        val focused = event.focusedOption.name
+        val container = arguments[focused] ?: return emptyList()
+        val builder = container.builder
+        val choices = if (builder.autoCompleteCallback != null) {
+            builder.autoCompleteCallback!!.invoke(event)
+        } else {
+            emptyList()
+        }
+        return choices.filter { (k, v) -> k.isNotEmpty() && v.isNotEmpty() }.map { (k, v) ->
+            Command.Choice(k, v)
+        }
     }
 
     internal open fun addArgument(name: String, argument: ArgumentContainer<*, *>) {

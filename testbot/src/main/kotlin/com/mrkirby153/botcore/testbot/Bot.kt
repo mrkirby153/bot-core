@@ -32,7 +32,11 @@ fun main() {
         }
     }
     val commandWithArgs = slashCommand("testing") {
-        val name by string().required()
+        val name by string(){
+            autocomplete {
+                listOf(it.focusedOption.value.uppercase() to "1")
+            }
+        }.required()
         val optionalButDefault by string("optional").optional("Heh")
         run {
             reply {
