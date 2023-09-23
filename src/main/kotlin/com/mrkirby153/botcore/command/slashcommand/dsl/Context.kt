@@ -21,18 +21,13 @@ import org.slf4j.Logger
  * @param A The [Arguments] for this slash command
  */
 @SlashDsl
-class SlashContext<A : Arguments>(
-    val command: AbstractSlashCommand<A>,
+class SlashContext(
+    val command: AbstractSlashCommand,
     private val event: SlashCommandInteractionEvent,
     private val coroutineScope: CoroutineScope
 ) : SlashCommandInteraction by event, CoroutineScope by coroutineScope {
 
     private val log: Logger by SLF4J
-
-    /**
-     * The arguments that were provided by the user
-     */
-    lateinit var args: A
 
     /**
      * Loads the context
@@ -61,38 +56,38 @@ class SlashContext<A : Arguments>(
     }
 
     private fun loadArguments() {
-        log.trace("Loading arguments")
-        val args = command.args() ?: return
-        this.args = args
-
-
-        val argParseErrors = mutableMapOf<String, String>()
-        event.options.forEach { opt ->
-            val name = opt.name
-            val arg = args.getArgument(name) ?: return@forEach
-            val raw = event.getOption(name)
-            log.trace("Mapping {} -> {}. Required? {}", opt.name, raw, arg.required)
-            if (raw == null) {
-                if (arg.required) {
-                    log.error("Required argument $name was somehow not provided")
-                    argParseErrors[name] = "Required argument was not provided"
-                }
-                return@forEach
-            }
-            log.trace("Attempting to parse argument {} with {}", name, raw)
-            try {
-                args.addMappedValue(name, arg.converter.convert(opt))
-            } catch (e: ArgumentParseException) {
-                log.trace("Parse of {} failed", name, e)
-                argParseErrors[name] = e.message ?: "An unknown error occurred"
-            }
-        }
-        if (argParseErrors.isNotEmpty()) {
-            log.trace("Parse completed with {} errors", argParseErrors.size)
-            throw BatchArgumentParseException(argParseErrors.map { (k, v) ->
-                k to ArgumentParseException(v)
-            }.toMap())
-        }
+//        log.trace("Loading arguments")
+//        val args = command.args() ?: return
+//        this.args = args
+//
+//
+//        val argParseErrors = mutableMapOf<String, String>()
+//        event.options.forEach { opt ->
+//            val name = opt.name
+//            val arg = args.getArgument(name) ?: return@forEach
+//            val raw = event.getOption(name)
+//            log.trace("Mapping {} -> {}. Required? {}", opt.name, raw, arg.required)
+//            if (raw == null) {
+//                if (arg.required) {
+//                    log.error("Required argument $name was somehow not provided")
+//                    argParseErrors[name] = "Required argument was not provided"
+//                }
+//                return@forEach
+//            }
+//            log.trace("Attempting to parse argument {} with {}", name, raw)
+//            try {
+//                args.addMappedValue(name, arg.converter.convert(opt))
+//            } catch (e: ArgumentParseException) {
+//                log.trace("Parse of {} failed", name, e)
+//                argParseErrors[name] = e.message ?: "An unknown error occurred"
+//            }
+//        }
+//        if (argParseErrors.isNotEmpty()) {
+//            log.trace("Parse completed with {} errors", argParseErrors.size)
+//            throw BatchArgumentParseException(argParseErrors.map { (k, v) ->
+//                k to ArgumentParseException(v)
+//            }.toMap())
+//        }
     }
 }
 

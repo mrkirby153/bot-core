@@ -19,9 +19,7 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.Command
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
-import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData
-import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData
 import net.dv8tion.jda.api.interactions.commands.context.ContextInteraction
 import net.dv8tion.jda.api.interactions.commands.localization.LocalizationFunction
 import net.dv8tion.jda.api.sharding.ShardManager
@@ -51,12 +49,9 @@ class DslCommandExecutor private constructor(
 
     private val log: Logger by SLF4J
 
-    private val registeredCommands = mutableMapOf<String, SlashCommand<out Arguments>>()
+    private val registeredCommands = mutableMapOf<String, SlashCommand>()
     private val userContextCommands = mutableListOf<UserContextCommand>()
     private val messageContextCommands = mutableListOf<MessageContextCommand>()
-
-    private val globalChecks =
-        mutableListOf<PrerequisiteCheck<AbstractSlashCommand<*>>.() -> Unit>()
 
     private val localizationFunction: LocalizationFunction? =
         if (translationProvider != null && translationBundle != null) TranslationProviderLocalizationFunction(
@@ -64,31 +59,32 @@ class DslCommandExecutor private constructor(
             translationProvider
         ) else null
 
-    private fun getSlashCommand(event: SlashCommandInteractionEvent): AbstractSlashCommand<*>? {
-        val command = registeredCommands[event.name] ?: return null
-        val group = event.subcommandGroup
-        val subCommandName = event.subcommandName
-        return if (group != null) {
-            command.getSubCommand(group, subCommandName!!)
-        } else if (subCommandName != null) {
-            command.getSubCommand(subCommandName)
-        } else {
-            command
+
+    private fun getSlashCommand(
+        name: String,
+        group: String?,
+        subCommand: String?
+    ): AbstractSlashCommand? {
+        val command = registeredCommands[name] ?: return null
+        return when {
+            group != null -> {
+                command.getGroup(group)
+            }
+
+            subCommand != null -> {
+                command.getSubCommand(group, subCommand)
+            }
+
+            else ->
+                null
         }
     }
 
-    private fun getSlashCommand(event: CommandAutoCompleteInteractionEvent): AbstractSlashCommand<*>? {
-        val command = registeredCommands[event.name] ?: return null
-        val group = event.subcommandGroup
-        val subCommandName = event.subcommandName
-        return if (group != null) {
-            command.getSubCommand(group, subCommandName!!)
-        } else if (subCommandName != null) {
-            command.getSubCommand(subCommandName)
-        } else {
-            command
-        }
-    }
+    private fun getSlashCommand(event: SlashCommandInteractionEvent) =
+        getSlashCommand(event.name, event.subcommandGroup, event.subcommandName)
+
+    private fun getSlashCommand(event: CommandAutoCompleteInteractionEvent) =
+        getSlashCommand(event.name, event.subcommandGroup, event.subcommandName)
 
     private fun createOption(arg: ArgumentContainer<*, *>) = arg.builder.createOption().apply {
         isRequired = arg.required
@@ -104,60 +100,61 @@ class DslCommandExecutor private constructor(
     }
 
     private fun buildCommandData(): List<CommandData> {
-        val commands: MutableList<CommandData> = registeredCommands.map {
-            val cmd = it.value
-            val commandData = Commands.slash(cmd.name, cmd.description).apply {
-                if (localizationFunction != null) {
-                    setLocalizationFunction(localizationFunction)
-                }
-                isGuildOnly = !cmd.availableInDms
-            }
-            commandData.defaultPermissions = cmd.commandPermissions
-            if (cmd.subCommands.isNotEmpty()) {
-                commandData.addSubcommands(cmd.subCommands.map { sub ->
-                    val subCmd = sub.value
-                    SubcommandData(subCmd.name, subCmd.description).apply {
-                        populateArgs(this, subCmd.args())
-                    }
-                })
-            }
-            if (cmd.groups.isNotEmpty()) {
-                commandData.addSubcommandGroups(cmd.groups.map { group ->
-                    val grp = group.value
-                    SubcommandGroupData(grp.name, grp.description).addSubcommands(
-                        grp.commands.map { sub ->
-                            SubcommandData(
-                                sub.name,
-                                sub.description
-                            ).apply { populateArgs(this, sub.args()) }
-                        }
-                    )
-                })
-            }
-            val args = cmd.args()
-            if (args != null) {
-                commandData.addOptions(
-                    args.getArguments().map { arg ->
-                        createOption(arg)
-                    })
-            }
-            commandData
-        }.toMutableList()
-        val registeredContextCommands =
-            listOf(*userContextCommands.toTypedArray(), *messageContextCommands.toTypedArray())
-        commands.addAll(registeredContextCommands.mapNotNull { cmd ->
-            val c = when (cmd) {
-                is UserContextCommand -> Commands.user(cmd.name)
-                is MessageContextCommand -> Commands.message(cmd.name)
-                else -> null
-            }.apply {
-                if (this != null && localizationFunction != null) {
-                    setLocalizationFunction(localizationFunction)
-                }
-            }
-            c
-        })
-        return commands
+//        val commands: MutableList<CommandData> = registeredCommands.map {
+//            val cmd = it.value
+//            val commandData = Commands.slash(cmd.name, cmd.description).apply {
+//                if (localizationFunction != null) {
+//                    setLocalizationFunction(localizationFunction)
+//                }
+//                isGuildOnly = !cmd.availableInDms
+//            }
+//            commandData.defaultPermissions = cmd.commandPermissions
+//            if (cmd.subCommands.isNotEmpty()) {
+//                commandData.addSubcommands(cmd.subCommands.map { sub ->
+//                    val subCmd = sub.value
+//                    SubcommandData(subCmd.name, subCmd.description).apply {
+//                        populateArgs(this, subCmd.args())
+//                    }
+//                })
+//            }
+//            if (cmd.groups.isNotEmpty()) {
+//                commandData.addSubcommandGroups(cmd.groups.map { group ->
+//                    val grp = group.value
+//                    SubcommandGroupData(grp.name, grp.description).addSubcommands(
+//                        grp.commands.map { sub ->
+//                            SubcommandData(
+//                                sub.name,
+//                                sub.description
+//                            ).apply { populateArgs(this, sub.args()) }
+//                        }
+//                    )
+//                })
+//            }
+//            val args = cmd.args()
+//            if (args != null) {
+//                commandData.addOptions(
+//                    args.getArguments().map { arg ->
+//                        createOption(arg)
+//                    })
+//            }
+//            commandData
+//        }.toMutableList()
+//        val registeredContextCommands =
+//            listOf(*userContextCommands.toTypedArray(), *messageContextCommands.toTypedArray())
+//        commands.addAll(registeredContextCommands.mapNotNull { cmd ->
+//            val c = when (cmd) {
+//                is UserContextCommand -> Commands.user(cmd.name)
+//                is MessageContextCommand -> Commands.message(cmd.name)
+//                else -> null
+//            }.apply {
+//                if (this != null && localizationFunction != null) {
+//                    setLocalizationFunction(localizationFunction)
+//                }
+//            }
+//            c
+//        })
+//        return commands
+        TODO()
     }
 
     /**
@@ -203,38 +200,38 @@ class DslCommandExecutor private constructor(
      * Executes a slash command from the provided [event]
      */
     suspend fun execute(event: SlashCommandInteractionEvent, scope: CoroutineScope) {
-        val cmd = getSlashCommand(event) ?: return
-        log.trace("Executing slash command ${event.fullCommandName}")
-        val checkCtx = PrerequisiteCheck(cmd)
-        globalChecks.forEach {
-            it(checkCtx)
-            if (checkCtx.failed) {
-                return@forEach
-            }
-        }
-        if (checkCtx.failed) {
-            event.reply(":no_entry: ${checkCtx.failureMessage ?: "Command prerequisites did not pass"}")
-                .queue()
-            return
-        }
-        try {
-            cmd.execute(event, scope)
-        } catch (e: CommandException) {
-            event.reply(":no_entry: ${e.message ?: "An unknown error occurred!"}")
-                .setEphemeral(true).queue()
-        } catch (e: BatchArgumentParseException) {
-            event.reply(buildString {
-                if (e.exceptions.size > 1) {
-                    appendLine(":no_entry: Multiple errors occurred:")
-                    e.exceptions.forEach { (fieldName, exception) ->
-                        appendLine(" `$fieldName`: ${exception.message ?: "An unknown error occurred!"}")
-                    }
-                } else {
-                    val (fieldName, ex) = e.exceptions.entries.first()
-                    appendLine(":no_entry: `$fieldName`: ${ex.message ?: "An unknown error occurred!"}")
-                }
-            }).setEphemeral(true).queue()
-        }
+//        val cmd = getSlashCommand(event) ?: return
+//        log.trace("Executing slash command ${event.fullCommandName}")
+//        val checkCtx = PrerequisiteCheck(cmd)
+//        globalChecks.forEach {
+//            it(checkCtx)
+//            if (checkCtx.failed) {
+//                return@forEach
+//            }
+//        }
+//        if (checkCtx.failed) {
+//            event.reply(":no_entry: ${checkCtx.failureMessage ?: "Command prerequisites did not pass"}")
+//                .queue()
+//            return
+//        }
+//        try {
+//            cmd.execute(event, scope)
+//        } catch (e: CommandException) {
+//            event.reply(":no_entry: ${e.message ?: "An unknown error occurred!"}")
+//                .setEphemeral(true).queue()
+//        } catch (e: BatchArgumentParseException) {
+//            event.reply(buildString {
+//                if (e.exceptions.size > 1) {
+//                    appendLine(":no_entry: Multiple errors occurred:")
+//                    e.exceptions.forEach { (fieldName, exception) ->
+//                        appendLine(" `$fieldName`: ${exception.message ?: "An unknown error occurred!"}")
+//                    }
+//                } else {
+//                    val (fieldName, ex) = e.exceptions.entries.first()
+//                    appendLine(":no_entry: `$fieldName`: ${ex.message ?: "An unknown error occurred!"}")
+//                }
+//            }).setEphemeral(true).queue()
+//        }
     }
 
     /**
@@ -253,7 +250,7 @@ class DslCommandExecutor private constructor(
      *
      * @see SlashCommand
      */
-    fun register(vararg commands: SlashCommand<out Arguments>) {
+    fun register(vararg commands: SlashCommand) {
         commands.forEach { command ->
             log.trace("Registering command {}", command.name)
             registeredCommands[command.name] = command
@@ -275,13 +272,6 @@ class DslCommandExecutor private constructor(
                 is UserContextCommand -> userContextCommands.add(it)
             }
         }
-    }
-
-    /**
-     * Adds a global check
-     */
-    fun globalCheck(body: PrerequisiteCheck<AbstractSlashCommand<*>>.() -> Unit) {
-        this.globalChecks.add(body)
     }
 
     /**

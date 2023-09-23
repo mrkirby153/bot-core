@@ -11,7 +11,7 @@ import kotlin.reflect.KProperty
  * To use arguments in slash commands, create a class that extends [Arguments]. Arguments can then
  * be declared using the various argument delegators ([string], [int], [enum], etc.)
  */
-open class Arguments {
+class Arguments {
     private val arguments = mutableListOf<ArgumentContainer<*, *>>()
 
     private val mapped = HashMap<String, Any?>()
@@ -23,13 +23,8 @@ open class Arguments {
 
     internal fun addMappedValue(name: String, value: Any?) = mapped.put(name, value)
 
-    operator fun <T : Any?, U : T> ArgumentContainer<T, U>.getValue(
-        o: Arguments,
-        desc: KProperty<*>
-    ) = getValue<T>(this)
-
     @Suppress("UNCHECKED_CAST")
-    private fun <T> getValue(argumentContainer: ArgumentContainer<*, *>): T {
+    fun <T> getValue(argumentContainer: ArgumentContainer<*, *>): T {
         val data = mapped[argumentContainer.builder.name]
         return when (mapped[argumentContainer.builder.name]) {
             null -> {
