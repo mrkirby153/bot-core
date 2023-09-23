@@ -2,6 +2,8 @@ name: Build and publish Project
 
 on:
   push:
+    branches: ["main"]
+
 
 jobs:
   build-and-publish:
