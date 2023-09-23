@@ -3,7 +3,7 @@ package com.mrkirby153.botcore.command.slashcommand.dsl.types
 import com.mrkirby153.botcore.command.slashcommand.dsl.AbstractSlashCommand
 import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentConverter
 import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentParseException
-import com.mrkirby153.botcore.command.slashcommand.dsl.Arguments
+import com.mrkirby153.botcore.command.slashcommand.dsl.SlashCommand
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.Command
 import net.dv8tion.jda.api.interactions.commands.OptionMapping
@@ -52,12 +52,15 @@ class EnumArgumentBuilder<T : Enum<T>>(
     }
 }
 
-inline fun <reified T : Enum<T>> Arguments.enum(body: EnumArgumentBuilder<T>.() -> Unit): EnumArgumentBuilder<T> {
-//    val getter: (OptionMapping) -> T? = { map ->
-//        enumValues<T>().firstOrNull { it.name.equals(map.asString, true) }
-//    }
-//    return EnumArgumentBuilder(this, getter, enumValues()).apply(body)
-    TODO()
+inline fun <reified T : Enum<T>> SlashCommand.enum(
+    name: String? = null,
+    body: EnumArgumentBuilder<T>.() -> Unit = {}
+): EnumArgumentBuilder<T> {
+    val getter: (OptionMapping) -> T? = { map ->
+        enumValues<T>().firstOrNull { it.name.equals(map.asString, true) }
+    }
+    return EnumArgumentBuilder(this, getter, enumValues()).apply(body)
+        .apply { if (name != null) this@apply.name = name }
 }
 
 
@@ -96,8 +99,10 @@ class ChoicesArgumentBuilder(
 
 }
 
-//inline fun Arguments.choices(
-//    choices: List<String>? = null,
-//    noinline choiceProvider: ChoiceProvider? = null,
-//    body: ArgumentBuilder<String>.() -> Unit
-//) = ChoicesArgumentBuilder(this, choices, choiceProvider).apply(body)
+inline fun SlashCommand.choices(
+    name: String? = null,
+    choices: List<String>? = null,
+    noinline choiceProvider: ChoiceProvider? = null,
+    body: ArgumentBuilder<String>.() -> Unit = {}
+) = ChoicesArgumentBuilder(this, choices, choiceProvider).apply(body)
+    .apply { if (name != null) this@apply.name = name }

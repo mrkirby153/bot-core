@@ -32,7 +32,7 @@ fun main() {
         }
     }
     val commandWithArgs = slashCommand("testing") {
-        val name by string(){
+        val name by string {
             autocomplete {
                 listOf(it.focusedOption.value.uppercase() to "1")
             }

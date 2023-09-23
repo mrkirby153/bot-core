@@ -18,7 +18,8 @@ open class ArgumentBuilder<T : Any>(
 ) {
     private val log: Logger by SLF4J
 
-    var name: String? = null
+    @PublishedApi
+    internal var name: String? = null
     var description: String = "No description provided"
 
     open val type = converter.type

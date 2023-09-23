@@ -1,9 +1,9 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl.types
 
 import com.mrkirby153.botcore.command.slashcommand.dsl.AbstractSlashCommand
-import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentParseException
 import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentConverter
-import com.mrkirby153.botcore.command.slashcommand.dsl.Arguments
+import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentParseException
+import com.mrkirby153.botcore.command.slashcommand.dsl.SlashCommand
 import net.dv8tion.jda.api.entities.channel.Channel
 import net.dv8tion.jda.api.entities.channel.ChannelType
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel
@@ -72,42 +72,63 @@ private val forumChannelConverter = ChannelArgumentConverter {
         ?: throw ArgumentParseException("Provided channel was not a forum")
 }
 
-//fun Arguments.textChannel(body: ChannelArgumentBuilder<TextChannel>.() -> Unit) =
-//    ChannelArgumentBuilder(this, textChannelConverter, ChannelType.TEXT).apply(body)
-//
-//fun Arguments.voiceChannel(body: ChannelArgumentBuilder<VoiceChannel>.() -> Unit) =
-//    ChannelArgumentBuilder(this, voiceChannelConverter, ChannelType.VOICE).apply(body)
-//
-//fun Arguments.guildChannel(body: ChannelArgumentBuilder<GuildChannel>.() -> Unit) =
-//    ChannelArgumentBuilder(
-//        this,
-//        guildChannelConverter,
-//        ChannelType.TEXT,
-//        ChannelType.VOICE,
-//        ChannelType.NEWS,
-//        ChannelType.STAGE
-//    ).apply(body)
-//
-//fun Arguments.messageChannel(body: ChannelArgumentBuilder<MessageChannel>.() -> Unit) =
-//    ChannelArgumentBuilder(
-//        this,
-//        messageChannelConverter,
-//        ChannelType.TEXT,
-//        ChannelType.PRIVATE,
-//        ChannelType.VOICE
-//    ).apply(body)
-//
-//fun Arguments.stageChannel(body: ChannelArgumentBuilder<StageChannel>.() -> Unit) =
-//    ChannelArgumentBuilder(this, stageChannelConverter, ChannelType.STAGE).apply(body)
-//
-//fun Arguments.thread(body: ChannelArgumentBuilder<ThreadChannel>.() -> Unit) =
-//    ChannelArgumentBuilder(
-//        this,
-//        threadChannelConverter,
-//        ChannelType.GUILD_NEWS_THREAD,
-//        ChannelType.GUILD_PUBLIC_THREAD,
-//        ChannelType.GUILD_PRIVATE_THREAD
-//    ).apply(body)
-//
-//fun Arguments.forum(body: ChannelArgumentBuilder<ForumChannel>.() -> Unit) =
-//    ChannelArgumentBuilder(this, forumChannelConverter, ChannelType.FORUM).apply(body)
+fun SlashCommand.textChannel(
+    name: String? = null,
+    body: ChannelArgumentBuilder<TextChannel>.() -> Unit = {}
+) = ChannelArgumentBuilder(this, textChannelConverter, ChannelType.TEXT).apply(body)
+    .apply { if (name != null) this@apply.name = name }
+
+fun SlashCommand.voiceChannel(
+    name: String? = null,
+    body: ChannelArgumentBuilder<VoiceChannel>.() -> Unit = {}
+) = ChannelArgumentBuilder(this, voiceChannelConverter, ChannelType.VOICE).apply(body)
+    .apply { if (name != null) this@apply.name = name }
+
+fun SlashCommand.guildChannel(
+    name: String? = null,
+    body: ChannelArgumentBuilder<GuildChannel>.() -> Unit = {}
+) = ChannelArgumentBuilder(
+    this,
+    guildChannelConverter,
+    ChannelType.TEXT,
+    ChannelType.VOICE,
+    ChannelType.NEWS,
+    ChannelType.STAGE
+).apply(body)
+    .apply { if (name != null) this@apply.name = name }
+
+fun SlashCommand.messageChannel(
+    name: String? = null,
+    body: ChannelArgumentBuilder<MessageChannel>.() -> Unit = {}
+) = ChannelArgumentBuilder(
+    this,
+    messageChannelConverter,
+    ChannelType.TEXT,
+    ChannelType.PRIVATE,
+    ChannelType.VOICE
+).apply(body)
+    .apply { if (name != null) this@apply.name = name }
+
+fun SlashCommand.stageChannel(
+    name: String? = null,
+    body: ChannelArgumentBuilder<StageChannel>.() -> Unit = {}
+) = ChannelArgumentBuilder(this, stageChannelConverter, ChannelType.STAGE).apply(body)
+    .apply { if (name != null) this@apply.name = name }
+
+fun SlashCommand.thread(
+    name: String? = null,
+    body: ChannelArgumentBuilder<ThreadChannel>.() -> Unit = {}
+) = ChannelArgumentBuilder(
+    this,
+    threadChannelConverter,
+    ChannelType.GUILD_NEWS_THREAD,
+    ChannelType.GUILD_PUBLIC_THREAD,
+    ChannelType.GUILD_PRIVATE_THREAD
+).apply(body)
+    .apply { if (name != null) this@apply.name = name }
+
+fun SlashCommand.forum(
+    name: String? = null,
+    body: ChannelArgumentBuilder<ForumChannel>.() -> Unit = {}
+) = ChannelArgumentBuilder(this, forumChannelConverter, ChannelType.FORUM).apply(body)
+    .apply { if (name != null) this@apply.name = name }
