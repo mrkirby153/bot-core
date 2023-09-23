@@ -6,7 +6,6 @@ import kotlinx.coroutines.CoroutineScope
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent
-import net.dv8tion.jda.api.interactions.InteractionHook
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 import net.dv8tion.jda.api.interactions.commands.context.MessageContextInteraction
 import net.dv8tion.jda.api.interactions.commands.context.UserContextInteraction
@@ -29,13 +28,7 @@ class SlashContext(
 
     private val log: Logger by SLF4J
 
-    /**
-     * Loads the context
-     */
-    fun load() {
-        log.trace("Loading context")
-        loadArguments()
-    }
+    val arguments: Arguments = loadArguments()
 
     /**
      * Replies to the interaction using a [MessageBuilder]
@@ -46,39 +39,46 @@ class SlashContext(
         return event.reply(mb.create()).setEphemeral(ephemeral)
     }
 
-    private fun loadArguments() {
-//        log.trace("Loading arguments")
-//        val args = command.args() ?: return
-//        this.args = args
-//
-//
-//        val argParseErrors = mutableMapOf<String, String>()
-//        event.options.forEach { opt ->
-//            val name = opt.name
-//            val arg = args.getArgument(name) ?: return@forEach
-//            val raw = event.getOption(name)
-//            log.trace("Mapping {} -> {}. Required? {}", opt.name, raw, arg.required)
-//            if (raw == null) {
-//                if (arg.required) {
-//                    log.error("Required argument $name was somehow not provided")
-//                    argParseErrors[name] = "Required argument was not provided"
-//                }
-//                return@forEach
-//            }
-//            log.trace("Attempting to parse argument {} with {}", name, raw)
-//            try {
-//                args.addMappedValue(name, arg.converter.convert(opt))
-//            } catch (e: ArgumentParseException) {
-//                log.trace("Parse of {} failed", name, e)
-//                argParseErrors[name] = e.message ?: "An unknown error occurred"
-//            }
-//        }
-//        if (argParseErrors.isNotEmpty()) {
-//            log.trace("Parse completed with {} errors", argParseErrors.size)
-//            throw BatchArgumentParseException(argParseErrors.map { (k, v) ->
-//                k to ArgumentParseException(v)
-//            }.toMap())
-//        }
+    operator fun <T> Option<T>.invoke(): T {
+        log.trace("Retrieving argument with name {}", this.name)
+        val container =
+            arguments.getArgument(this.name) ?: error("Argument with name ${this.name} not found")
+        return arguments.getValue(container)
+    }
+
+    private fun loadArguments(): Arguments {
+        log.trace("Loading arguments")
+        val parseErrors = mutableMapOf<String, String>()
+        val args = Arguments(command)
+        event.options.forEach { option ->
+            val name = option.name
+            val argument = command.arguments[name] ?: return@forEach
+            val raw = event.getOption(name)
+            log.trace("Mapping {} -> {}. Required? {}", raw, option.name, argument.required)
+            if (raw == null) {
+                if (argument.required) {
+                    log.error("Required argument $name was somehow not provided")
+                    parseErrors[name] = "Required argument was somehow not provided. This is a bug"
+                }
+                return@forEach
+            }
+            log.trace("Attempting to parse argument {} from {}", name, raw)
+            try {
+                args.addMappedValue(name, argument.converter.convert(option))
+            } catch (e: ArgumentParseException) {
+                log.trace("Parse of {} failed", name, e)
+                parseErrors[name] = e.message ?: "An unknown error occurred"
+            }
+        }
+        if (parseErrors.isNotEmpty()) {
+            log.trace("Parse completed with {} errors", parseErrors.size)
+            throw BatchArgumentParseException(parseErrors.map { (k, v) ->
+                k to ArgumentParseException(v)
+            }.toMap())
+        } else {
+            log.trace("Parse completed")
+        }
+        return args
     }
 }
 

@@ -19,7 +19,8 @@ open class AbstractSlashCommand(
      * Executes the slash command. If [body] is null, this is a no-op
      */
     internal suspend fun execute(event: SlashCommandInteractionEvent, scope: CoroutineScope) {
-        TODO()
+        val context = SlashContext(this, event, scope)
+        action?.invoke(context)
     }
 
     internal fun handleAutocomplete(event: CommandAutoCompleteInteractionEvent): List<Command.Choice> {

@@ -14,8 +14,9 @@ class ArgumentContainer<Type : Any?, ConverterType : Type>(
     val default: Type? = null
 ) {
     operator fun provideDelegate(ref: Any?, prop: KProperty<*>): OptionDelegate<Type> {
-        val name = builder.name ?: prop.name
+        val name = (builder.name ?: prop.name).lowercase()
+        builder.name = name // Once we know the name, update the builder
         inst.addArgument(name, this)
-        return OptionDelegate()
+        return OptionDelegate(name)
     }
 }

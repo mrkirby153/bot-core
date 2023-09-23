@@ -33,10 +33,10 @@ fun main() {
     }
     val commandWithArgs = slashCommand("testing") {
         val name by string().required()
-        val optionalArg by string().optional()
+        val optionalButDefault by string("optional").optional("Heh")
         run {
             reply {
-                content = "Hello, ${name()}"
+                content = "Hello, ${name()}, ${optionalButDefault()}"
             }.await()
         }
     }

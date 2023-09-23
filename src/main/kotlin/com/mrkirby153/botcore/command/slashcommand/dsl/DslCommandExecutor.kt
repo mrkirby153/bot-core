@@ -1,6 +1,7 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl
 
 import com.mrkirby153.botcore.coroutine.CoroutineEventListener
+import com.mrkirby153.botcore.coroutine.await
 import com.mrkirby153.botcore.i18n.TranslationProvider
 import com.mrkirby153.botcore.i18n.TranslationProviderLocalizationFunction
 import com.mrkirby153.botcore.utils.SLF4J
@@ -19,6 +20,7 @@ import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEven
 import net.dv8tion.jda.api.interactions.commands.Command
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
 import net.dv8tion.jda.api.interactions.commands.build.Commands
+import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData
 import net.dv8tion.jda.api.interactions.commands.context.ContextInteraction
@@ -77,7 +79,7 @@ class DslCommandExecutor private constructor(
             }
 
             else ->
-                null
+                command
         }
     }
 
@@ -86,6 +88,18 @@ class DslCommandExecutor private constructor(
 
     private fun getSlashCommand(event: CommandAutoCompleteInteractionEvent) =
         getSlashCommand(event.name, event.subcommandGroup, event.subcommandName)
+
+    private fun createOption(name: String, container: ArgumentContainer<*, *>) =
+        OptionData(container.builder.type, name, container.builder.description).apply {
+            container.builder.augmentOption(this)
+            isRequired = container.required
+        }
+
+    private fun populateArgs(data: SubcommandData, subCommand: SubCommand) {
+        data.addOptions(subCommand.arguments.map { (name, container) ->
+            createOption(name, container)
+        })
+    }
 
     private fun buildCommandData(): List<CommandData> {
         val commands: MutableList<CommandData> = registeredCommands.map { (_, cmd) ->
@@ -98,7 +112,7 @@ class DslCommandExecutor private constructor(
             if (cmd.subCommands.isNotEmpty()) {
                 commandData.addSubcommands(cmd.subCommands.map { (_, sub) ->
                     SubcommandData(sub.name, sub.description).apply {
-                        // TODO: Populate args
+                        populateArgs(this, sub)
                     }
                 })
             }
@@ -107,14 +121,16 @@ class DslCommandExecutor private constructor(
                     SubcommandGroupData(group.name, group.description).addSubcommands(
                         group.commands.map { (_, subCommand) ->
                             SubcommandData(subCommand.name, subCommand.description).apply {
-                                // TODO: Populate arguments
+                                populateArgs(this, subCommand)
                             }
                         }
                     )
                 })
             }
             if (cmd.arguments.isNotEmpty()) {
-                // TODO: Populate arguments
+                commandData.addOptions(cmd.arguments.map { (name, container) ->
+                    createOption(name, container)
+                })
             }
             commandData
         }.toMutableList()
@@ -179,38 +195,26 @@ class DslCommandExecutor private constructor(
      * Executes a slash command from the provided [event]
      */
     suspend fun execute(event: SlashCommandInteractionEvent, scope: CoroutineScope) {
-//        val cmd = getSlashCommand(event) ?: return
-//        log.trace("Executing slash command ${event.fullCommandName}")
-//        val checkCtx = PrerequisiteCheck(cmd)
-//        globalChecks.forEach {
-//            it(checkCtx)
-//            if (checkCtx.failed) {
-//                return@forEach
-//            }
-//        }
-//        if (checkCtx.failed) {
-//            event.reply(":no_entry: ${checkCtx.failureMessage ?: "Command prerequisites did not pass"}")
-//                .queue()
-//            return
-//        }
-//        try {
-//            cmd.execute(event, scope)
-//        } catch (e: CommandException) {
-//            event.reply(":no_entry: ${e.message ?: "An unknown error occurred!"}")
-//                .setEphemeral(true).queue()
-//        } catch (e: BatchArgumentParseException) {
-//            event.reply(buildString {
-//                if (e.exceptions.size > 1) {
-//                    appendLine(":no_entry: Multiple errors occurred:")
-//                    e.exceptions.forEach { (fieldName, exception) ->
-//                        appendLine(" `$fieldName`: ${exception.message ?: "An unknown error occurred!"}")
-//                    }
-//                } else {
-//                    val (fieldName, ex) = e.exceptions.entries.first()
-//                    appendLine(":no_entry: `$fieldName`: ${ex.message ?: "An unknown error occurred!"}")
-//                }
-//            }).setEphemeral(true).queue()
-//        }
+        val cmd = getSlashCommand(event) ?: return
+        log.trace("Executing slash command ${event.fullCommandName}")
+        try {
+            cmd.execute(event, scope)
+        } catch (e: CommandException) {
+            event.reply(":no_entry: ${e.message ?: "An unknown error occurred"}").setEphemeral(true)
+                .await()
+        } catch (e: BatchArgumentParseException) {
+            event.reply(buildString {
+                if (e.exceptions.size > 1) {
+                    appendLine(":no_entry: Multiple errors occurred:")
+                    e.exceptions.forEach { (fieldName, exception) ->
+                        appendLine(" `$fieldName`: ${exception.message ?: "An unknown error occurred!"}")
+                    }
+                } else {
+                    val (fieldName, ex) = e.exceptions.entries.first()
+                    appendLine(":no_entry: `$fieldName`: ${ex.message ?: "An unknown error occurred!"}")
+                }
+            }).setEphemeral(true).await()
+        }
     }
 
     /**
