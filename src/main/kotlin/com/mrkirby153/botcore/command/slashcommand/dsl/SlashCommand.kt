@@ -69,7 +69,7 @@ class SubCommand(name: String) : AbstractSlashCommand(name) {
 
 @SlashDsl
 class Group(name: String, private val parent: SlashContext) : AbstractSlashCommand(name) {
-    private val commands = mutableMapOf<String, SubCommand>()
+    internal val commands = mutableMapOf<String, SubCommand>()
 
     internal fun getCommand(name: String) = commands[name]
 

@@ -3,7 +3,6 @@ package com.mrkirby153.botcore.command.slashcommand.dsl
 import com.mrkirby153.botcore.coroutine.CoroutineEventListener
 import com.mrkirby153.botcore.i18n.TranslationProvider
 import com.mrkirby153.botcore.i18n.TranslationProviderLocalizationFunction
-import com.mrkirby153.botcore.utils.PrerequisiteCheck
 import com.mrkirby153.botcore.utils.SLF4J
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -19,7 +18,9 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.Command
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
+import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData
 import net.dv8tion.jda.api.interactions.commands.context.ContextInteraction
 import net.dv8tion.jda.api.interactions.commands.localization.LocalizationFunction
 import net.dv8tion.jda.api.sharding.ShardManager
@@ -87,61 +88,52 @@ class DslCommandExecutor private constructor(
         getSlashCommand(event.name, event.subcommandGroup, event.subcommandName)
 
     private fun buildCommandData(): List<CommandData> {
-//        val commands: MutableList<CommandData> = registeredCommands.map {
-//            val cmd = it.value
-//            val commandData = Commands.slash(cmd.name, cmd.description).apply {
-//                if (localizationFunction != null) {
-//                    setLocalizationFunction(localizationFunction)
-//                }
-//                isGuildOnly = !cmd.availableInDms
-//            }
-//            commandData.defaultPermissions = cmd.commandPermissions
-//            if (cmd.subCommands.isNotEmpty()) {
-//                commandData.addSubcommands(cmd.subCommands.map { sub ->
-//                    val subCmd = sub.value
-//                    SubcommandData(subCmd.name, subCmd.description).apply {
-//                        populateArgs(this, subCmd.args())
-//                    }
-//                })
-//            }
-//            if (cmd.groups.isNotEmpty()) {
-//                commandData.addSubcommandGroups(cmd.groups.map { group ->
-//                    val grp = group.value
-//                    SubcommandGroupData(grp.name, grp.description).addSubcommands(
-//                        grp.commands.map { sub ->
-//                            SubcommandData(
-//                                sub.name,
-//                                sub.description
-//                            ).apply { populateArgs(this, sub.args()) }
-//                        }
-//                    )
-//                })
-//            }
-//            val args = cmd.args()
-//            if (args != null) {
-//                commandData.addOptions(
-//                    args.getArguments().map { arg ->
-//                        createOption(arg)
-//                    })
-//            }
-//            commandData
-//        }.toMutableList()
-//        val registeredContextCommands =
-//            listOf(*userContextCommands.toTypedArray(), *messageContextCommands.toTypedArray())
-//        commands.addAll(registeredContextCommands.mapNotNull { cmd ->
-//            val c = when (cmd) {
-//                is UserContextCommand -> Commands.user(cmd.name)
-//                is MessageContextCommand -> Commands.message(cmd.name)
-//                else -> null
-//            }.apply {
-//                if (this != null && localizationFunction != null) {
-//                    setLocalizationFunction(localizationFunction)
-//                }
-//            }
-//            c
-//        })
-//        return commands
-        TODO()
+        val commands: MutableList<CommandData> = registeredCommands.map { (_, cmd) ->
+            val commandData = Commands.slash(cmd.name, cmd.description).apply {
+                isGuildOnly = !cmd.availableInDms
+                if (localizationFunction != null) {
+                    setLocalizationFunction(localizationFunction)
+                }
+            }
+            if (cmd.subCommands.isNotEmpty()) {
+                commandData.addSubcommands(cmd.subCommands.map { (_, sub) ->
+                    SubcommandData(sub.name, sub.description).apply {
+                        // TODO: Populate args
+                    }
+                })
+            }
+            if (cmd.groups.isNotEmpty()) {
+                commandData.addSubcommandGroups(cmd.groups.map { (_, group) ->
+                    SubcommandGroupData(group.name, group.description).addSubcommands(
+                        group.commands.map { (_, subCommand) ->
+                            SubcommandData(subCommand.name, subCommand.description).apply {
+                                // TODO: Populate arguments
+                            }
+                        }
+                    )
+                })
+            }
+            if (cmd.arguments.isNotEmpty()) {
+                // TODO: Populate arguments
+            }
+            commandData
+        }.toMutableList()
+        val registeredContextCommands = mutableListOf<ContextCommand<*>>()
+        registeredContextCommands.addAll(userContextCommands)
+        registeredContextCommands.addAll(messageContextCommands)
+        commands.addAll(registeredContextCommands.mapNotNull { cmd ->
+            val c = when (cmd) {
+                is UserContextCommand -> Commands.user(cmd.name)
+                is MessageContextCommand -> Commands.message(cmd.name)
+                else -> null
+            }.apply {
+                if (this != null && localizationFunction != null) {
+                    setLocalizationFunction(localizationFunction)
+                }
+            }
+            c
+        })
+        return commands
     }
 
     /**

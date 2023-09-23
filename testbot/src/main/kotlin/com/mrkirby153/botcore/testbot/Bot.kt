@@ -40,6 +40,7 @@ fun main() {
             }.await()
         }
     }
+    dslCommandExecutor.register(command, commandWithArgs)
 
     val guilds = (System.getenv("SLASH_COMMAND_GUILDS")?.trim() ?: "").split(",")
     require(guilds.isNotEmpty()) { "Slash command guilds not provided" }
