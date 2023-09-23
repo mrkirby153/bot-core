@@ -13,5 +13,5 @@ object BooleanConverter : ArgumentConverter<Boolean> {
     override val type = OptionType.BOOLEAN
 }
 
-fun Arguments.boolean(body: ArgumentBuilder<Boolean>.() -> Unit) =
-    ArgumentBuilder(this, BooleanConverter).apply(body)
+//fun Arguments.boolean(body: ArgumentBuilder<Boolean>.() -> Unit) =
+//    ArgumentBuilder(this, BooleanConverter).apply(body)

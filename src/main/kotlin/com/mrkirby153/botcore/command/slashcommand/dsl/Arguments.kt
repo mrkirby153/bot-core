@@ -1,9 +1,7 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl
 
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.enum
-import com.mrkirby153.botcore.command.slashcommand.dsl.types.int
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.string
-import kotlin.reflect.KProperty
 
 /**
  * A top level class for slash command arguments.

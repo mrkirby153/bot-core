@@ -46,15 +46,6 @@ class SlashContext(
         return event.reply(mb.create()).setEphemeral(ephemeral)
     }
 
-    /**
-     * Defers and runs the provided [body]. Defers ephemerally if [ephemeral] is set
-     */
-    fun defer(ephemeral: Boolean = false, body: (InteractionHook) -> Unit) {
-        deferReply(ephemeral).queue {
-            body(it)
-        }
-    }
-
     private fun loadArguments() {
 //        log.trace("Loading arguments")
 //        val args = command.args() ?: return

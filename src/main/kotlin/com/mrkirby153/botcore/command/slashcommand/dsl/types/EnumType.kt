@@ -1,5 +1,6 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl.types
 
+import com.mrkirby153.botcore.command.slashcommand.dsl.AbstractSlashCommand
 import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentConverter
 import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentParseException
 import com.mrkirby153.botcore.command.slashcommand.dsl.Arguments
@@ -7,6 +8,7 @@ import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInterac
 import net.dv8tion.jda.api.interactions.commands.Command
 import net.dv8tion.jda.api.interactions.commands.OptionMapping
 import net.dv8tion.jda.api.interactions.commands.OptionType
+import net.dv8tion.jda.api.interactions.commands.build.OptionData
 
 class EnumConverter<T : Enum<T>>(
     private val getter: (OptionMapping) -> T?,
@@ -24,7 +26,7 @@ class EnumConverter<T : Enum<T>>(
 }
 
 class EnumArgumentBuilder<T : Enum<T>>(
-    inst: Arguments,
+    inst: AbstractSlashCommand,
     getter: (OptionMapping) -> T?,
     private val validEnums: Array<T>
 ) : ArgumentBuilder<T>(inst, EnumConverter(getter, validEnums)) {
@@ -41,26 +43,28 @@ class EnumArgumentBuilder<T : Enum<T>>(
         }
     }
 
-    override fun createOption() = super.createOption().apply {
+    override fun augmentOption(option: OptionData) {
+        super.augmentOption(option)
         if (validEnums.size < 25)
-            addChoices(validEnums.map { Command.Choice(it.toString(), it.name) })
+            option.addChoices(validEnums.map { Command.Choice(it.toString(), it.name) })
         else
-            isAutoComplete = true
+            option.isAutoComplete = true
     }
 }
 
 inline fun <reified T : Enum<T>> Arguments.enum(body: EnumArgumentBuilder<T>.() -> Unit): EnumArgumentBuilder<T> {
-    val getter: (OptionMapping) -> T? = { map ->
-        enumValues<T>().firstOrNull { it.name.equals(map.asString, true) }
-    }
-    return EnumArgumentBuilder(this, getter, enumValues()).apply(body)
+//    val getter: (OptionMapping) -> T? = { map ->
+//        enumValues<T>().firstOrNull { it.name.equals(map.asString, true) }
+//    }
+//    return EnumArgumentBuilder(this, getter, enumValues()).apply(body)
+    TODO()
 }
 
 
 typealias ChoiceProvider = (CommandAutoCompleteInteractionEvent) -> List<Pair<String, String>>
 
 class ChoicesArgumentBuilder(
-    inst: Arguments,
+    inst: AbstractSlashCommand,
     private val choices: List<String>? = null,
     choiceProvider: (ChoiceProvider)? = null
 ) : ArgumentBuilder<String>(inst, StringConverter) {
@@ -84,15 +88,16 @@ class ChoicesArgumentBuilder(
         error("Custom autocomplete is not supported")
     }
 
-    override fun createOption() = super.createOption().apply {
-        if (this@ChoicesArgumentBuilder.choices != null) {
-            addChoices(this@ChoicesArgumentBuilder.choices.map { Command.Choice(it, it) })
-        }
+    override fun augmentOption(option: OptionData) {
+        super.augmentOption(option)
+        if (this.choices != null)
+            option.addChoices(this.choices.map { Command.Choice(it, it) })
     }
+
 }
 
-inline fun Arguments.choices(
-    choices: List<String>? = null,
-    noinline choiceProvider: ChoiceProvider? = null,
-    body: ArgumentBuilder<String>.() -> Unit
-) = ChoicesArgumentBuilder(this, choices, choiceProvider).apply(body)
+//inline fun Arguments.choices(
+//    choices: List<String>? = null,
+//    noinline choiceProvider: ChoiceProvider? = null,
+//    body: ArgumentBuilder<String>.() -> Unit
+//) = ChoicesArgumentBuilder(this, choices, choiceProvider).apply(body)

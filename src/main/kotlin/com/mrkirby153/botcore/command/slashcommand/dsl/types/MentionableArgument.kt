@@ -32,11 +32,11 @@ object RoleConverter : ArgumentConverter<Role> {
     override val type = OptionType.ROLE
 }
 
-fun Arguments.mentionable(body: ArgumentBuilder<IMentionable>.() -> Unit) =
-    ArgumentBuilder(this, MentionableConverter).apply(body)
-
-fun Arguments.user(body: ArgumentBuilder<User>.() -> Unit) =
-    ArgumentBuilder(this, UserConverter).apply(body)
-
-fun Arguments.role(body: ArgumentBuilder<Role>.() -> Unit) =
-    ArgumentBuilder(this, RoleConverter).apply(body)
+//fun Arguments.mentionable(body: ArgumentBuilder<IMentionable>.() -> Unit) =
+//    ArgumentBuilder(this, MentionableConverter).apply(body)
+//
+//fun Arguments.user(body: ArgumentBuilder<User>.() -> Unit) =
+//    ArgumentBuilder(this, UserConverter).apply(body)
+//
+//fun Arguments.role(body: ArgumentBuilder<Role>.() -> Unit) =
+//    ArgumentBuilder(this, RoleConverter).apply(body)

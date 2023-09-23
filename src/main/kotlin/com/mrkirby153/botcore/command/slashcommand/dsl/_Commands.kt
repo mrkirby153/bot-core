@@ -3,6 +3,8 @@ package com.mrkirby153.botcore.command.slashcommand.dsl
 @DslMarker
 annotation class SlashDsl
 
+fun slashCommand(name: String, body: SlashCommand.() -> Unit) = SlashCommand(name).apply(body)
+
 /**
  * Declares a user context command
  *

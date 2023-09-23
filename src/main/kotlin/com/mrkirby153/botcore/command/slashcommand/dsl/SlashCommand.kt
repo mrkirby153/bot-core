@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions
 open class AbstractSlashCommand(
     val name: String
 ) {
+    internal val arguments = mutableMapOf<String, ArgumentContainer<*, *>>()
     var description: String = "No description provided"
 
     internal var action: (suspend SlashContext.() -> Unit)? = null
@@ -24,6 +25,10 @@ open class AbstractSlashCommand(
     internal fun handleAutocomplete(event: CommandAutoCompleteInteractionEvent): List<Command.Choice> {
         TODO()
     }
+
+    internal open fun addArgument(name: String, argument: ArgumentContainer<*, *>) {
+        arguments[name] = argument
+    }
 }
 
 @SlashDsl
@@ -32,6 +37,7 @@ class SlashCommand(name: String) : AbstractSlashCommand(name) {
     internal val groups = mutableMapOf<String, Group>()
     internal var commandPermissions = DefaultMemberPermissions.ENABLED
     var availableInDms = false
+
 
     fun run(action: suspend SlashContext.() -> Unit) {
         check(groups.isEmpty()) { "Cannot mix groups and non-grouped commands" }
@@ -69,5 +75,9 @@ class Group(name: String, private val parent: SlashContext) : AbstractSlashComma
 
     internal fun setCommand(command: SubCommand) {
         commands[command.name] = command
+    }
+
+    override fun addArgument(name: String, argument: ArgumentContainer<*, *>) {
+        throw UnsupportedOperationException("Groups cannot have arguments")
     }
 }

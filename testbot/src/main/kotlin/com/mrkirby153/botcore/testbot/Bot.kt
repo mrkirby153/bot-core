@@ -1,6 +1,9 @@
 package com.mrkirby153.botcore.testbot
 
 import com.mrkirby153.botcore.command.slashcommand.dsl.DslCommandExecutor
+import com.mrkirby153.botcore.command.slashcommand.dsl.slashCommand
+import com.mrkirby153.botcore.command.slashcommand.dsl.types.string
+import com.mrkirby153.botcore.coroutine.await
 import com.mrkirby153.botcore.coroutine.enableCoroutines
 import com.mrkirby153.botcore.utils.SLF4J
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder
@@ -20,8 +23,23 @@ fun main() {
     val dslCommandExecutor = DslCommandExecutor()
     shardManager.addEventListener(dslCommandExecutor.getListener())
 
-//    val testCommands = TestCommands()
-//    testCommands.register(dslCommandExecutor)
+    val command = slashCommand("ping") {
+        description = "A cool description"
+        run {
+            reply {
+                content = "Pong!"
+            }.await()
+        }
+    }
+    val commandWithArgs = slashCommand("testing") {
+        val name by string().required()
+        val optionalArg by string().optional()
+        run {
+            reply {
+                content = "Hello, ${name()}"
+            }.await()
+        }
+    }
 
     val guilds = (System.getenv("SLASH_COMMAND_GUILDS")?.trim() ?: "").split(",")
     require(guilds.isNotEmpty()) { "Slash command guilds not provided" }

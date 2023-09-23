@@ -13,5 +13,5 @@ object AttachmentConverter : ArgumentConverter<Attachment> {
     override val type = OptionType.ATTACHMENT
 }
 
-fun Arguments.attachment(body: ArgumentBuilder<Attachment>.() -> Unit) =
-    ArgumentBuilder(this, AttachmentConverter).apply(body)
+//fun Arguments.attachment(body: ArgumentBuilder<Attachment>.() -> Unit) =
+//    ArgumentBuilder(this, AttachmentConverter).apply(body)

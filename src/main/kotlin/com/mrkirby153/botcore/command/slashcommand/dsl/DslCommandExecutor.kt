@@ -86,19 +86,6 @@ class DslCommandExecutor private constructor(
     private fun getSlashCommand(event: CommandAutoCompleteInteractionEvent) =
         getSlashCommand(event.name, event.subcommandGroup, event.subcommandName)
 
-    private fun createOption(arg: ArgumentContainer<*, *>) = arg.builder.createOption().apply {
-        isRequired = arg.required
-    }
-
-    private fun populateArgs(data: SubcommandData, args: Arguments?) {
-        if (args != null) {
-            data.addOptions(
-                args.getArguments().map { arg ->
-                    createOption(arg)
-                })
-        }
-    }
-
     private fun buildCommandData(): List<CommandData> {
 //        val commands: MutableList<CommandData> = registeredCommands.map {
 //            val cmd = it.value
