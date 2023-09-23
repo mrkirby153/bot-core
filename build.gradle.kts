@@ -1,4 +1,8 @@
+import org.jetbrains.dokka.Platform
 import org.jetbrains.dokka.gradle.DokkaTask
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 
 plugins {
     id("java")
@@ -72,5 +76,10 @@ tasks {
     }
     withType<Jar> {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
+    withType<KotlinCompile> {
+        kotlinOptions {
+            javaParameters = true
+        }
     }
 }
