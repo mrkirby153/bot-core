@@ -45,6 +45,8 @@ open class AbstractSlashCommand(
 @SlashDsl
 class SlashCommand(name: String) : AbstractSlashCommand(name) {
     internal val subCommands = mutableMapOf<String, SubCommand>()
+
+    @PublishedApi
     internal val groups = mutableMapOf<String, Group>()
     internal var commandPermissions = DefaultMemberPermissions.ENABLED
     var availableInDms = false
@@ -79,11 +81,12 @@ class SubCommand(name: String) : AbstractSlashCommand(name) {
 }
 
 @SlashDsl
-class Group(name: String, private val parent: SlashContext) : AbstractSlashCommand(name) {
+class Group(name: String) : AbstractSlashCommand(name) {
     internal val commands = mutableMapOf<String, SubCommand>()
 
     internal fun getCommand(name: String) = commands[name]
 
+    @PublishedApi
     internal fun setCommand(command: SubCommand) {
         commands[command.name] = command
     }

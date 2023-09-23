@@ -29,7 +29,7 @@ dependencies {
 }
 
 group = "com.mrkirby153"
-version = "6.0-SNAPSHOT"
+version = "7.0-SNAPSHOT"
 
 java {
     withSourcesJar()
