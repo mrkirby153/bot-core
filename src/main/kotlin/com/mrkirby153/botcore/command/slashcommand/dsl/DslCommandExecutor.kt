@@ -129,9 +129,10 @@ class DslCommandExecutor private constructor(
                 })
             }
             if (cmd.arguments.isNotEmpty()) {
-                commandData.addOptions(cmd.arguments.map { (name, container) ->
-                    createOption(name, container)
-                })
+                commandData.addOptions(cmd.arguments.entries.sortedBy { !it.value.required }
+                    .map { (name, container) ->
+                        createOption(name, container)
+                    })
             }
             commandData
         }.toMutableList()
