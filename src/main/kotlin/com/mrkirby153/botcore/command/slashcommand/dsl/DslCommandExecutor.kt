@@ -188,6 +188,7 @@ class DslCommandExecutor private constructor(
         return CompletableFuture.allOf(*futures.toTypedArray())
     }
 
+
     /**
      * Gets a list of [CommandData] for all commands registered with this executor
      */
@@ -197,15 +198,24 @@ class DslCommandExecutor private constructor(
      * Executes a slash command from the provided [event]
      */
     suspend fun execute(event: SlashCommandInteractionEvent, scope: CoroutineScope) {
+        suspend fun replyOrEdit(
+            message: String,
+            ephemeral: Boolean = true
+        ) =
+            if (event.isAcknowledged) {
+                event.hook.editOriginal(message)
+            } else {
+                event.reply(message).setEphemeral(ephemeral)
+            }.await()
+
         val cmd = getSlashCommand(event) ?: return
         log.trace("Executing slash command ${event.fullCommandName}")
         try {
             cmd.execute(event, scope)
         } catch (e: CommandException) {
-            event.reply(":no_entry: ${e.message ?: "An unknown error occurred"}").setEphemeral(true)
-                .await()
+            replyOrEdit(":no_entry: ${e.message ?: "An unknown error occurred"}")
         } catch (e: BatchArgumentParseException) {
-            event.reply(buildString {
+            val msg = buildString {
                 if (e.exceptions.size > 1) {
                     appendLine(":no_entry: Multiple errors occurred:")
                     e.exceptions.forEach { (fieldName, exception) ->
@@ -215,7 +225,11 @@ class DslCommandExecutor private constructor(
                     val (fieldName, ex) = e.exceptions.entries.first()
                     appendLine(":no_entry: `$fieldName`: ${ex.message ?: "An unknown error occurred!"}")
                 }
-            }).setEphemeral(true).await()
+            }
+            replyOrEdit(msg)
+        } catch (e: Exception) {
+            log.error("Error executing slash command ${event.fullCommandName}", e)
+            replyOrEdit(":no_entry: Something went wrong when processing this command")
         }
     }
 

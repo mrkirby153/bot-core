@@ -1,8 +1,10 @@
 package com.mrkirby153.botcore.testbot.command
 
+import com.mrkirby153.botcore.command.slashcommand.dsl.CommandException
 import com.mrkirby153.botcore.command.slashcommand.dsl.DslCommandExecutor
 import com.mrkirby153.botcore.command.slashcommand.dsl.ProvidesSlashCommands
 import com.mrkirby153.botcore.command.slashcommand.dsl.slashCommand
+import com.mrkirby153.botcore.command.slashcommand.dsl.types.boolean
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.choices
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.string
 import com.mrkirby153.botcore.coroutine.await
@@ -56,6 +58,17 @@ class TestCommands : ProvidesSlashCommands {
 
                 run {
                     reply("You provided ${arg1()} and ${arg2()}").await()
+                }
+            }
+            slashCommand("deferred-error") {
+                val commandException by boolean("command_exception").optional(false)
+                run {
+                    deferReply(true).await()
+                    if (commandException()) {
+                        throw CommandException("Deferred command exception")
+                    } else {
+                        error("Deferred error!")
+                    }
                 }
             }
         }
