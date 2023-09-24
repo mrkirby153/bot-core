@@ -2,7 +2,7 @@ name: Upload Release
 on:
   push:
     tags:
-      - 'v*'
+      - '*'
 
 jobs:
   upload-release:
