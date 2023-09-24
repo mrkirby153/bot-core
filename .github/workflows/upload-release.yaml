@@ -1,0 +1,30 @@
+name: Upload Release
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  upload-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.ref }}
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: adopt
+          java-version: 17
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: 8.2
+      - name: Publish
+        run: ./gradlew -Pversion="${VERSION_REF#refs/tags/v}" publish
+        shell: bash
+        env:
+          REPO_USERNAME: ${{ vars.REPO_USERNAME }}
+          REPO_PASSWORD: ${{ secrets.REPO_PASSWORD }}
+          VERSION_REF: ${{ github.event.ref }}
