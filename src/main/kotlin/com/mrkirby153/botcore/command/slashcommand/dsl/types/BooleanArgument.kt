@@ -1,9 +1,7 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl.types
 
+import com.mrkirby153.botcore.command.slashcommand.dsl.AbstractSlashCommand
 import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentConverter
-import com.mrkirby153.botcore.command.slashcommand.dsl.Arguments
-import com.mrkirby153.botcore.command.slashcommand.dsl.SlashCommand
-import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.interactions.commands.OptionMapping
 import net.dv8tion.jda.api.interactions.commands.OptionType
 
@@ -15,7 +13,7 @@ object BooleanConverter : ArgumentConverter<Boolean> {
     override val type = OptionType.BOOLEAN
 }
 
-fun SlashCommand.boolean(
+fun AbstractSlashCommand.boolean(
     name: String? = null,
     body: ArgumentBuilder<Boolean>.() -> Unit = {}
 ) = ArgumentBuilder(this, BooleanConverter).apply(body)

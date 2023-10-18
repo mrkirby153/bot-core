@@ -3,7 +3,6 @@ package com.mrkirby153.botcore.command.slashcommand.dsl.types
 import com.mrkirby153.botcore.command.slashcommand.dsl.AbstractSlashCommand
 import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentConverter
 import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentParseException
-import com.mrkirby153.botcore.command.slashcommand.dsl.SlashCommand
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.Command
 import net.dv8tion.jda.api.interactions.commands.OptionMapping
@@ -52,7 +51,7 @@ class EnumArgumentBuilder<T : Enum<T>>(
     }
 }
 
-inline fun <reified T : Enum<T>> SlashCommand.enum(
+inline fun <reified T : Enum<T>> AbstractSlashCommand.enum(
     name: String? = null,
     body: EnumArgumentBuilder<T>.() -> Unit = {}
 ): EnumArgumentBuilder<T> {
@@ -99,7 +98,7 @@ class ChoicesArgumentBuilder(
 
 }
 
-inline fun SlashCommand.choices(
+inline fun AbstractSlashCommand.choices(
     name: String? = null,
     choices: List<String>? = null,
     noinline choiceProvider: ChoiceProvider? = null,

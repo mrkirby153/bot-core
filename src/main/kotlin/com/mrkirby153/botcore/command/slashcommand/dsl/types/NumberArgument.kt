@@ -3,7 +3,6 @@ package com.mrkirby153.botcore.command.slashcommand.dsl.types
 import com.mrkirby153.botcore.command.slashcommand.dsl.AbstractSlashCommand
 import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentConverter
 import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentParseException
-import com.mrkirby153.botcore.command.slashcommand.dsl.SlashCommand
 import net.dv8tion.jda.api.interactions.commands.OptionMapping
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
@@ -91,19 +90,19 @@ class IntegerArgumentBuilder(inst: AbstractSlashCommand) :
     }
 }
 
-fun SlashCommand.double(
+fun AbstractSlashCommand.double(
     name: String? = null,
     body: DoubleArgumentBuilder.() -> Unit = {}
 ) = DoubleArgumentBuilder(this).apply(body)
     .apply { if (name != null) this@apply.name = name }
 
-fun SlashCommand.long(
+fun AbstractSlashCommand.long(
     name: String? = null,
     body: LongArgumentBuilder.() -> Unit = {}
 ) = LongArgumentBuilder(this).apply(body)
     .apply { if (name != null) this@apply.name = name }
 
-fun SlashCommand.int(
+fun AbstractSlashCommand.int(
     name: String? = null,
     body: IntegerArgumentBuilder.() -> Unit = {}
 ) = IntegerArgumentBuilder(this).apply(body)

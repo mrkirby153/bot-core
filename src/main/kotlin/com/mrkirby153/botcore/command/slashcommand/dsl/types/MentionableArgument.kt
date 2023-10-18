@@ -1,7 +1,7 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl.types
 
+import com.mrkirby153.botcore.command.slashcommand.dsl.AbstractSlashCommand
 import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentConverter
-import com.mrkirby153.botcore.command.slashcommand.dsl.SlashCommand
 import net.dv8tion.jda.api.entities.IMentionable
 import net.dv8tion.jda.api.entities.Role
 import net.dv8tion.jda.api.entities.User
@@ -32,19 +32,19 @@ object RoleConverter : ArgumentConverter<Role> {
     override val type = OptionType.ROLE
 }
 
-fun SlashCommand.mentionable(
+fun AbstractSlashCommand.mentionable(
     name: String? = null,
     body: ArgumentBuilder<IMentionable>.() -> Unit = {}
 ) = ArgumentBuilder(this, MentionableConverter).apply(body)
     .apply { if (name != null) this@apply.name = name }
 
-fun SlashCommand.user(
+fun AbstractSlashCommand.user(
     name: String? = null,
     body: ArgumentBuilder<User>.() -> Unit = {}
 ) = ArgumentBuilder(this, UserConverter).apply(body)
     .apply { if (name != null) this@apply.name = name }
 
-fun SlashCommand.role(
+fun AbstractSlashCommand.role(
     name: String? = null,
     body: ArgumentBuilder<Role>.() -> Unit = {}
 ) = ArgumentBuilder(this, RoleConverter).apply(body)

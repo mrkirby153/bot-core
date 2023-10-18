@@ -1,8 +1,7 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl.types
 
+import com.mrkirby153.botcore.command.slashcommand.dsl.AbstractSlashCommand
 import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentConverter
-import com.mrkirby153.botcore.command.slashcommand.dsl.Arguments
-import com.mrkirby153.botcore.command.slashcommand.dsl.SlashCommand
 import net.dv8tion.jda.api.entities.Message.Attachment
 import net.dv8tion.jda.api.interactions.commands.OptionMapping
 import net.dv8tion.jda.api.interactions.commands.OptionType
@@ -14,7 +13,7 @@ object AttachmentConverter : ArgumentConverter<Attachment> {
     override val type = OptionType.ATTACHMENT
 }
 
-fun SlashCommand.attachment(
+fun AbstractSlashCommand.attachment(
     name: String? = null,
     body: ArgumentBuilder<Attachment>.() -> Unit = {}
 ) = ArgumentBuilder(this, AttachmentConverter).apply(body)
