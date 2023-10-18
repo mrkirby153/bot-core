@@ -57,7 +57,7 @@ class SlashCommand(name: String) : AbstractSlashCommand(name) {
         this.action = action
     }
 
-    fun defualtPermissions(vararg permissions: Permission) {
+    fun defaultPermissions(vararg permissions: Permission) {
         commandPermissions = DefaultMemberPermissions.enabledFor(*permissions)
     }
 
