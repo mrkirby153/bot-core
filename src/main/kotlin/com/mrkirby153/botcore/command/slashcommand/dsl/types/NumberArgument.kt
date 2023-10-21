@@ -13,7 +13,7 @@ abstract class NumberArgumentBuilder<T : Number>(
     inst: AbstractSlashCommand,
     converter: ArgumentConverter<T>
 ) :
-    ArgumentBuilder<T>(inst, converter) {
+    SimpleArgumentBuilder<T>(inst, converter) {
     abstract var min: T
     abstract var max: T
 }

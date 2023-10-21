@@ -6,10 +6,10 @@ import kotlin.reflect.KProperty
 /**
  * A data class for storing arguments
  */
-class ArgumentContainer<Type : Any?, ConverterType : Type>(
+class ArgumentContainer<Type : Any?, ConverterType>(
     private val inst: AbstractSlashCommand,
     internal val converter: ArgumentConverter<ConverterType>,
-    val builder: ArgumentBuilder<*>,
+    val builder: ArgumentBuilder<*, *>,
     val required: Boolean,
     val default: Type? = null
 ) {

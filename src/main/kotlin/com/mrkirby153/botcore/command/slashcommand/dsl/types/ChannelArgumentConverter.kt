@@ -28,7 +28,7 @@ class ChannelArgumentBuilder<T : Channel>(
     inst: AbstractSlashCommand,
     converter: ChannelArgumentConverter<T>,
     private vararg val allowedTypes: ChannelType
-) : ArgumentBuilder<T>(inst, converter) {
+) : SimpleArgumentBuilder<T>(inst, converter) {
 
     override fun augmentOption(option: OptionData) {
         super.augmentOption(option)

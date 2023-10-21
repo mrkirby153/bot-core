@@ -34,18 +34,18 @@ object RoleConverter : ArgumentConverter<Role> {
 
 fun AbstractSlashCommand.mentionable(
     name: String? = null,
-    body: ArgumentBuilder<IMentionable>.() -> Unit = {}
-) = ArgumentBuilder(this, MentionableConverter).apply(body)
+    body: SimpleArgumentBuilder<IMentionable>.() -> Unit = {}
+) = SimpleArgumentBuilder(this, MentionableConverter).apply(body)
     .apply { if (name != null) this@apply.name = name }
 
 fun AbstractSlashCommand.user(
     name: String? = null,
-    body: ArgumentBuilder<User>.() -> Unit = {}
-) = ArgumentBuilder(this, UserConverter).apply(body)
+    body: SimpleArgumentBuilder<User>.() -> Unit = {}
+) = SimpleArgumentBuilder(this, UserConverter).apply(body)
     .apply { if (name != null) this@apply.name = name }
 
 fun AbstractSlashCommand.role(
     name: String? = null,
-    body: ArgumentBuilder<Role>.() -> Unit = {}
-) = ArgumentBuilder(this, RoleConverter).apply(body)
+    body: SimpleArgumentBuilder<Role>.() -> Unit = {}
+) = SimpleArgumentBuilder(this, RoleConverter).apply(body)
     .apply { if (name != null) this@apply.name = name }

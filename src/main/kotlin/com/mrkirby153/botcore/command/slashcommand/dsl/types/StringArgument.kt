@@ -14,7 +14,7 @@ object StringConverter : ArgumentConverter<String> {
 
 fun AbstractSlashCommand.string(
     name: String? = null,
-    body: ArgumentBuilder<String>.() -> Unit = {}
+    body: SimpleArgumentBuilder<String>.() -> Unit = {}
 ) =
-    ArgumentBuilder(this, StringConverter).apply { if (name != null) this@apply.name = name }
+    SimpleArgumentBuilder(this, StringConverter).apply { if (name != null) this@apply.name = name }
         .apply(body)

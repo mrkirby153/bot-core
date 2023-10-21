@@ -15,6 +15,6 @@ object AttachmentConverter : ArgumentConverter<Attachment> {
 
 fun AbstractSlashCommand.attachment(
     name: String? = null,
-    body: ArgumentBuilder<Attachment>.() -> Unit = {}
-) = ArgumentBuilder(this, AttachmentConverter).apply(body)
+    body: SimpleArgumentBuilder<Attachment>.() -> Unit = {}
+) = SimpleArgumentBuilder(this, AttachmentConverter).apply(body)
     .apply { if (name != null) this@apply.name = name }

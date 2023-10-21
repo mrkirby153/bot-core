@@ -7,6 +7,7 @@ import com.mrkirby153.botcore.command.slashcommand.dsl.slashCommand
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.boolean
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.choices
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.string
+import com.mrkirby153.botcore.testbot.wrappedString
 import com.mrkirby153.botcore.coroutine.await
 import com.mrkirby153.botcore.utils.SLF4J
 import kotlinx.coroutines.delay
@@ -24,6 +25,13 @@ class TestCommands : ProvidesSlashCommands {
 
                 run {
                     reply("Test command Executed!: ${arg1()}").await()
+                }
+            }
+            slashCommand("test2") {
+                description = "Test command with wrapped data"
+                val arg1 by wrappedString { description = "Foo" }.required()
+                run {
+                    reply("Given ${arg1()}").await()
                 }
             }
             slashCommand("context-test") {
@@ -50,10 +58,8 @@ class TestCommands : ProvidesSlashCommands {
                 }.required()
                 val arg2 by choices(choiceProvider = {
                     val str = it.focusedOption.value
-                    if (str.isNotEmpty())
-                        return@choices listOf(str.reversed() to str.reversed())
-                    else
-                        return@choices emptyList()
+                    if (str.isNotEmpty()) return@choices listOf(str.reversed() to str.reversed())
+                    else return@choices emptyList()
                 }).optional("testing")
 
                 run {

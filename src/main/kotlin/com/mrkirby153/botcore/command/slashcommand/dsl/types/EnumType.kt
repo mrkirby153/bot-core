@@ -28,7 +28,7 @@ class EnumArgumentBuilder<T : Enum<T>>(
     inst: AbstractSlashCommand,
     getter: (OptionMapping) -> T?,
     private val validEnums: Array<T>
-) : ArgumentBuilder<T>(inst, EnumConverter(getter, validEnums)) {
+) : SimpleArgumentBuilder<T>(inst, EnumConverter(getter, validEnums)) {
 
     init {
         if (validEnums.size > 25) {
@@ -69,7 +69,7 @@ class ChoicesArgumentBuilder(
     inst: AbstractSlashCommand,
     private val choices: List<String>? = null,
     choiceProvider: (ChoiceProvider)? = null
-) : ArgumentBuilder<String>(inst, StringConverter) {
+) : SimpleArgumentBuilder<String>(inst, StringConverter) {
 
     init {
         if (choices == null && choiceProvider == null) {
@@ -102,6 +102,6 @@ inline fun AbstractSlashCommand.choices(
     name: String? = null,
     choices: List<String>? = null,
     noinline choiceProvider: ChoiceProvider? = null,
-    body: ArgumentBuilder<String>.() -> Unit = {}
+    body: ChoicesArgumentBuilder.() -> Unit = {}
 ) = ChoicesArgumentBuilder(this, choices, choiceProvider).apply(body)
     .apply { if (name != null) this@apply.name = name }

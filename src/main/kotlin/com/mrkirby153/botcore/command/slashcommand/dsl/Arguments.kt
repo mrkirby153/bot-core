@@ -38,7 +38,12 @@ class Arguments(
                 }
             }
 
-            else -> data
+            else ->
+                if (data is WrappedData<*>) {
+                    data.get()
+                } else {
+                    data
+                }
         } as T
     }
 

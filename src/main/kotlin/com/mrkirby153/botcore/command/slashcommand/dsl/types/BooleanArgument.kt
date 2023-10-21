@@ -15,6 +15,6 @@ object BooleanConverter : ArgumentConverter<Boolean> {
 
 fun AbstractSlashCommand.boolean(
     name: String? = null,
-    body: ArgumentBuilder<Boolean>.() -> Unit = {}
-) = ArgumentBuilder(this, BooleanConverter).apply(body)
+    body: SimpleArgumentBuilder<Boolean>.() -> Unit = {}
+) = SimpleArgumentBuilder(this, BooleanConverter).apply(body)
     .apply { if (name != null) this@apply.name = name }

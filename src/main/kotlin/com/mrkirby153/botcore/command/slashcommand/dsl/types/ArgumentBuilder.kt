@@ -12,9 +12,9 @@ import org.slf4j.Logger
  * A generic Argument builder for building arguments
  */
 @SlashDsl
-open class ArgumentBuilder<T : Any>(
+open class ArgumentBuilder<OptionType : Any, ConverterType : Any>(
     private val inst: AbstractSlashCommand,
-    private val converter: ArgumentConverter<T>
+    private val converter: ArgumentConverter<ConverterType>
 ) {
     private val log: Logger by SLF4J
 
@@ -25,11 +25,11 @@ open class ArgumentBuilder<T : Any>(
 
     internal var autoCompleteCallback: AutoCompleteCallback? = null
 
-    fun required() = ArgumentContainer(inst, converter, this, true)
+    fun required() = ArgumentContainer<OptionType, ConverterType>(inst, converter, this, true)
 
-    fun optional() = ArgumentContainer<T?, T>(inst, converter, this, false)
+    fun optional() = ArgumentContainer<OptionType?, ConverterType>(inst, converter, this, false)
 
-    fun optional(default: T) =
+    fun optional(default: OptionType) =
         ArgumentContainer(inst, converter, this, false, default)
 
     open fun autocomplete(callback: AutoCompleteCallback) {
@@ -40,3 +40,9 @@ open class ArgumentBuilder<T : Any>(
         option.isAutoComplete = autoCompleteCallback != null
     }
 }
+
+open class SimpleArgumentBuilder<OptionType : Any>(
+    inst: AbstractSlashCommand, converter: ArgumentConverter<OptionType>
+) : ArgumentBuilder<OptionType, OptionType>(
+    inst, converter
+)
