@@ -30,6 +30,8 @@ dependencies {
 
     compileOnly("org.springframework:spring-context:6.0.0")
     compileOnly("org.springframework.boot:spring-boot-autoconfigure:2.7.5")
+    compileOnly("org.springframework.data:spring-data-jpa:2.7.5")
+    compileOnly("jakarta.persistence:jakarta.persistence-api:2.2.3")
 }
 
 group = "com.mrkirby153"
@@ -79,6 +81,8 @@ tasks {
     withType<KotlinCompile> {
         kotlinOptions {
             javaParameters = true
+            // Experimental context receiver support
+            freeCompilerArgs += "-Xcontext-receivers"
         }
     }
 }

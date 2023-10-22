@@ -1,5 +1,6 @@
 package com.mrkirby153.botcore.spring.config
 
+import com.mrkirby153.botcore.command.slashcommand.dsl.types.spring.JpaArgumentConfig
 import org.springframework.context.annotation.Import
 
 /**
@@ -14,3 +15,9 @@ annotation class EnableBot
  */
 @Import(DslCommandExecutorRegister::class)
 annotation class RegisterSlashCommands
+
+/**
+ * Enables built-in autocomplete for spring jpa entities
+ */
+@Import(JpaArgumentConfig::class)
+annotation class EnableJpaAutocomplete
