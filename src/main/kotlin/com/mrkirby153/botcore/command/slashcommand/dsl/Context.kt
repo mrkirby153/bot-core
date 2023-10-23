@@ -1,11 +1,13 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl
 
 import com.mrkirby153.botcore.builder.MessageBuilder
+import com.mrkirby153.botcore.coroutine.await
 import com.mrkirby153.botcore.utils.SLF4J
 import kotlinx.coroutines.CoroutineScope
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent
+import net.dv8tion.jda.api.interactions.InteractionHook
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 import net.dv8tion.jda.api.interactions.commands.context.MessageContextInteraction
 import net.dv8tion.jda.api.interactions.commands.context.UserContextInteraction
@@ -79,6 +81,14 @@ class SlashContext(
             log.trace("Parse completed")
         }
         return args
+    }
+
+    /**
+     * Defers the reply and then executes [handler]. Specify [ephemeral] to defer ephemerally
+     */
+    suspend fun defer(ephemeral: Boolean = false, handler: suspend (InteractionHook) -> Unit) {
+        val hook = deferReply(ephemeral).await()
+        handler(hook)
     }
 }
 
