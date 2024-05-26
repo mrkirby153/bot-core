@@ -6,12 +6,12 @@ import com.mrkirby153.botcore.command.slashcommand.dsl.ArgumentParseException
 import com.mrkirby153.botcore.command.slashcommand.dsl.WrappedData
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.ArgumentBuilder
 import com.mrkirby153.botcore.utils.SLF4J
+import jakarta.persistence.EntityManager
 import net.dv8tion.jda.api.interactions.commands.OptionMapping
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.repository.findByIdOrNull
-import javax.persistence.EntityManager
 import kotlin.math.min
 
 @Configuration

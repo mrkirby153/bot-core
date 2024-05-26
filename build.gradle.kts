@@ -21,7 +21,7 @@ repositories {
 dependencies {
     implementation("org.slf4j:slf4j-api:2.0.4")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.6.4")
-    implementation("javax.annotation:javax.annotation-api:1.3.2")
+    implementation("jakarta.persistence:jakarta.persistence-api:3.2.0")
     implementation("org.json:json:20220924")
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.7.20")
     implementation("com.ibm.icu:icu4j:72.1")
