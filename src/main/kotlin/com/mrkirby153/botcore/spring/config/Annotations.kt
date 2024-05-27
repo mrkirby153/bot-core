@@ -14,10 +14,20 @@ annotation class EnableBot
  * Automatically discover and register slash commands
  */
 @Import(DslCommandExecutorRegister::class)
+@Target(AnnotationTarget.CLASS)
 annotation class RegisterSlashCommands
 
 /**
  * Enables built-in autocomplete for spring jpa entities
  */
 @Import(JpaArgumentConfig::class)
+@Target(AnnotationTarget.CLASS)
 annotation class EnableJpaAutocomplete
+
+
+/**
+ * Enables the built-in modal manager
+ */
+@Import(ModalManagerConfiguration::class)
+@Target(AnnotationTarget.CLASS)
+annotation class EnableModalManager
