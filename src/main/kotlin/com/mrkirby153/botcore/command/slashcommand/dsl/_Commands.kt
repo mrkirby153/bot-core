@@ -57,16 +57,15 @@ inline fun Group.subCommand(name: String, body: SubCommand.() -> Unit) =
  *
  * User context commands show up under the `Apps` section when right-clicking on a user in the client
  * ```kotlin
- * messageContextCommand {
- *  name = "Lookup message"
+ * messageContextCommand("Lookup message") {
  *  action {
  *      reply("Looking up message $message").queue()
  *  }
  * }
  * ```
  */
-inline fun userContextCommand(body: UserContextCommand.() -> Unit) =
-    UserContextCommand().apply(body)
+inline fun userContextCommand(name: String, body: UserContextCommand.() -> Unit) =
+    UserContextCommand(name).apply(body)
 
 /**
  * Declares a message context command
@@ -76,13 +75,29 @@ inline fun userContextCommand(body: UserContextCommand.() -> Unit) =
  *
  * Example invocation
  * ```kotlin
- * messageContextCommand {
- *  name = "Lookup user"
+ * messageContextCommand("Lookup user") {
  *  action {
  *      reply("Looking up user $user").queue()
  *  }
  * }
  * ```
  */
-inline fun messageContextCommand(body: MessageContextCommand.() -> Unit) =
-    MessageContextCommand().apply(body)
+inline fun messageContextCommand(name: String, body: MessageContextCommand.() -> Unit) =
+    MessageContextCommand(name).apply(body)
+
+
+/**
+ * Declares a user context command and registers it with the current executor
+ */
+fun DslCommandExecutor.userContextCommand(name: String, body: UserContextCommand.() -> Unit) =
+    UserContextCommand(name).apply(body).also {
+        this.register(it)
+    }
+
+/**
+ * Declares a message context command and registers it with the current executor
+ */
+fun DslCommandExecutor.messageContextCommand(name: String, body: MessageContextCommand.() -> Unit) =
+    MessageContextCommand(name).apply(body).also {
+        this.register(it)
+    }

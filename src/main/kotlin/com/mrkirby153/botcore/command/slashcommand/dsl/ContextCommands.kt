@@ -8,12 +8,14 @@ import net.dv8tion.jda.api.interactions.commands.context.ContextInteraction
  *
  * @param Event The [ContextInteraction] that is provided to [execute] when the interaction is ran
  */
-open class ContextCommand<Event : ContextInteraction<*>> {
+open class ContextCommand<Event : ContextInteraction<*>>(
+    val name: String
+) {
 
     /**
      * The name of the command
      */
-    lateinit var name: String
+
     private lateinit var commandAction: (Event) -> Unit
 
     private val checks = mutableListOf<PrerequisiteCheck<Event>.() -> Unit>()
@@ -62,11 +64,9 @@ open class ContextCommand<Event : ContextInteraction<*>> {
 /**
  * A user context menu interaction
  */
-class UserContextCommand : ContextCommand<UserContext>() {
-}
+class UserContextCommand(name: String) : ContextCommand<UserContext>(name)
 
 /**
  * A message context menu interaction
  */
-class MessageContextCommand : ContextCommand<MessageContext>() {
-}
+class MessageContextCommand(name: String) : ContextCommand<MessageContext>(name)
