@@ -1,5 +1,6 @@
 package com.mrkirby153.botcore.testbot.command
 
+import com.mrkirby153.botcore.builder.message
 import com.mrkirby153.botcore.command.slashcommand.dsl.CommandException
 import com.mrkirby153.botcore.command.slashcommand.dsl.DslCommandExecutor
 import com.mrkirby153.botcore.command.slashcommand.dsl.ProvidesSlashCommands
@@ -7,13 +8,16 @@ import com.mrkirby153.botcore.command.slashcommand.dsl.slashCommand
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.boolean
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.choices
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.string
-import com.mrkirby153.botcore.testbot.wrappedString
 import com.mrkirby153.botcore.coroutine.await
+import com.mrkirby153.botcore.modal.ModalManager
+import com.mrkirby153.botcore.modal.await
+import com.mrkirby153.botcore.testbot.wrappedString
 import com.mrkirby153.botcore.utils.SLF4J
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import net.dv8tion.jda.api.interactions.components.text.TextInputStyle
 
-class TestCommands : ProvidesSlashCommands {
+class TestCommands(private val modalManager: ModalManager) : ProvidesSlashCommands {
     private val log by SLF4J
 
     override fun registerSlashCommands(executor: DslCommandExecutor) {
@@ -75,6 +79,30 @@ class TestCommands : ProvidesSlashCommands {
                     } else {
                         error("Deferred error!")
                     }
+                }
+            }
+            slashCommand("test-modal") {
+                run {
+                    val result = modalManager.await {
+                        title = "This is a title"
+                        textInput {
+                            name = "Test One"
+                        }
+                        textInput {
+                            name = "Test Two"
+                            style = TextInputStyle.PARAGRAPH
+                        }
+                    }
+                    result.reply(message {
+                        text {
+                            appendLine("Submitted Data")
+                            result.data.forEach { (k, v) ->
+                                appendBlock(k)
+                                append(":")
+                                appendLine("  $v")
+                            }
+                        }
+                    }.create()).setEphemeral(true).await()
                 }
             }
         }

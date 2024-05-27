@@ -2,6 +2,7 @@ package com.mrkirby153.botcore.testbot
 
 import com.mrkirby153.botcore.command.slashcommand.dsl.DslCommandExecutor
 import com.mrkirby153.botcore.coroutine.enableCoroutines
+import com.mrkirby153.botcore.modal.ModalManager
 import com.mrkirby153.botcore.testbot.command.TestCommands
 import com.mrkirby153.botcore.utils.SLF4J
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder
@@ -21,8 +22,11 @@ fun main() {
     val dslCommandExecutor = DslCommandExecutor()
     shardManager.addEventListener(dslCommandExecutor.getListener())
 
+    val modalManager = ModalManager()
+    shardManager.addEventListener(modalManager)
 
-    val testCommands = TestCommands()
+
+    val testCommands = TestCommands(modalManager)
     testCommands.registerSlashCommands(dslCommandExecutor)
 
     val guilds = (System.getenv("SLASH_COMMAND_GUILDS")?.trim() ?: "").split(",")
