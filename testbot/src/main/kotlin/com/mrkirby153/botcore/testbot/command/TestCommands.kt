@@ -5,9 +5,11 @@ import com.mrkirby153.botcore.command.slashcommand.dsl.CommandException
 import com.mrkirby153.botcore.command.slashcommand.dsl.DslCommandExecutor
 import com.mrkirby153.botcore.command.slashcommand.dsl.ProvidesSlashCommands
 import com.mrkirby153.botcore.command.slashcommand.dsl.slashCommand
+import com.mrkirby153.botcore.command.slashcommand.dsl.subCommand
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.boolean
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.choices
 import com.mrkirby153.botcore.command.slashcommand.dsl.types.string
+import com.mrkirby153.botcore.confirm
 import com.mrkirby153.botcore.coroutine.await
 import com.mrkirby153.botcore.modal.ModalManager
 import com.mrkirby153.botcore.modal.await
@@ -103,6 +105,40 @@ class TestCommands(private val modalManager: ModalManager) : ProvidesSlashComman
                             }
                         }
                     }.create()).setEphemeral(true).await()
+                }
+            }
+
+            slashCommand("test-confirm") {
+                subCommand("normal") {
+                    run {
+                        val (hook, confirmed) = confirm {
+                            text {
+                                appendLine("Are you sure you want to continue?")
+                            }
+                        }
+                        if (confirmed) {
+                            hook.sendMessage("Confirmed!").await()
+                        } else {
+                            hook.sendMessage("Failed!").await()
+                        }
+                    }
+                }
+                subCommand("defer") {
+                    run {
+                        defer {
+                            delay(5000)
+                            val (hook, confirmed) = it.confirm(user) {
+                                text {
+                                    appendLine("Are you sure you want to continue?")
+                                }
+                            }
+                            if (confirmed) {
+                                hook.editOriginal("Confirmed!").await()
+                            } else {
+                                hook.editOriginal("Failed!").await()
+                            }
+                        }
+                    }
                 }
             }
         }

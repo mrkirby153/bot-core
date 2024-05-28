@@ -1,5 +1,6 @@
 package com.mrkirby153.botcore.testbot
 
+import com.mrkirby153.botcore.ConfirmationHandler
 import com.mrkirby153.botcore.command.slashcommand.dsl.DslCommandExecutor
 import com.mrkirby153.botcore.coroutine.enableCoroutines
 import com.mrkirby153.botcore.modal.ModalManager
@@ -25,6 +26,7 @@ fun main() {
     val modalManager = ModalManager()
     shardManager.addEventListener(modalManager)
 
+    shardManager.addEventListener(ConfirmationHandler)
 
     val testCommands = TestCommands(modalManager)
     testCommands.registerSlashCommands(dslCommandExecutor)
