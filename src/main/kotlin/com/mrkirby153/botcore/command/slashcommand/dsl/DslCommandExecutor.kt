@@ -203,9 +203,9 @@ class DslCommandExecutor private constructor(
             ephemeral: Boolean = true
         ) =
             if (event.isAcknowledged) {
-                event.hook.editOriginal(message)
+                event.hook.editOriginal(message).setEmbeds().setComponents()
             } else {
-                event.reply(message).setEphemeral(ephemeral)
+                event.reply(message).setEphemeral(ephemeral).setEmbeds().setComponents()
             }.await()
 
         val cmd = getSlashCommand(event) ?: return
