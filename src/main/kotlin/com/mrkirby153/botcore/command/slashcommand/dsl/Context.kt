@@ -97,7 +97,8 @@ class SlashContext(
  *
  * @param event The [UserContextInteractionEvent] that this context wraps
  */
-class UserContext(event: UserContextInteractionEvent) : UserContextInteraction by event {
+class UserContext(event: UserContextInteractionEvent, scope: CoroutineScope) :
+    UserContextInteraction by event, CoroutineScope by scope {
 
 }
 
@@ -106,10 +107,10 @@ class UserContext(event: UserContextInteractionEvent) : UserContextInteraction b
  *
  * @param event The [MessageContextInteractionEvent] that this context wraps
  */
-class MessageContext(private val event: MessageContextInteractionEvent) :
-    MessageContextInteraction by event {
+class MessageContext(private val event: MessageContextInteractionEvent, scope: CoroutineScope) :
+    MessageContextInteraction by event, CoroutineScope by scope {
     /**
-     * The message that the interaction is being ran from
+     * The message that the interaction is being run from
      */
     val message
         get() = event.target

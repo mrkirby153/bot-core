@@ -2,6 +2,7 @@ package com.mrkirby153.botcore.command.slashcommand.dsl
 
 import com.mrkirby153.botcore.utils.PrerequisiteCheck
 import net.dv8tion.jda.api.interactions.commands.context.ContextInteraction
+import java.util.concurrent.TimeUnit
 
 /**
  * Top level class for context menu interactions
@@ -16,9 +17,11 @@ open class ContextCommand<Event : ContextInteraction<*>>(
      * The name of the command
      */
 
-    private lateinit var commandAction: (Event) -> Unit
+    private lateinit var commandAction: suspend (Event) -> Unit
 
     private val checks = mutableListOf<PrerequisiteCheck<Event>.() -> Unit>()
+
+    internal var timeout: Long = 30_000
 
     /**
      * If this command should be enabled by default
@@ -28,7 +31,7 @@ open class ContextCommand<Event : ContextInteraction<*>>(
     /**
      * The function ran when this interaction is invoked
      */
-    fun action(action: (Event) -> Unit) {
+    fun action(action: suspend (Event) -> Unit) {
         this.commandAction = action
     }
 
@@ -42,7 +45,7 @@ open class ContextCommand<Event : ContextInteraction<*>>(
     /**
      * Executes this command with the provided [event]
      */
-    fun execute(event: Event) {
+    suspend fun execute(event: Event) {
         val checkCtx = PrerequisiteCheck(event)
         checks.forEach {
             it(checkCtx)
@@ -58,6 +61,13 @@ open class ContextCommand<Event : ContextInteraction<*>>(
             event.reply(":no_entry: ${e.message ?: "An unknown error occurred!"}")
                 .setEphemeral(true).queue()
         }
+    }
+
+    /**
+     * Determines how long an invocation can run for
+     */
+    fun timeout(timeout: Long, unit: TimeUnit) {
+        this.timeout = unit.toMillis(timeout)
     }
 }
 

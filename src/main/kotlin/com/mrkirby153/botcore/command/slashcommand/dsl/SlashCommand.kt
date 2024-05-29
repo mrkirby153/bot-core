@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInterac
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.Command
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions
+import java.util.concurrent.TimeUnit
 
 open class AbstractSlashCommand(
     val name: String
@@ -14,6 +15,9 @@ open class AbstractSlashCommand(
     var description: String = "No description provided"
 
     internal var action: (suspend SlashContext.() -> Unit)? = null
+
+    internal var timeout: Long = 30_000 // 30 seconds
+    internal var autocompleteTimeout: Long = 5_000 // 5 seconds
 
     /**
      * Executes the slash command. If [body] is null, this is a no-op
@@ -39,6 +43,20 @@ open class AbstractSlashCommand(
 
     internal open fun addArgument(name: String, argument: ArgumentContainer<*, *>) {
         arguments[name] = argument
+    }
+
+    /**
+     * Sets how long this command is allowed to execute before it times out
+     */
+    fun commandTimeout(time: Long, timeUnit: TimeUnit) {
+        timeout = timeUnit.toMillis(time)
+    }
+
+    /**
+     * Sets how long any autocomplete query can take
+     */
+    fun autocompleteTimeout(time: Long, timeUnit: TimeUnit) {
+        autocompleteTimeout = timeUnit.toMillis(time)
     }
 }
 

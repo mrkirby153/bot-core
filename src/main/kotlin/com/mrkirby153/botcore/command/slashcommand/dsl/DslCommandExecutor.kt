@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.events.GenericEvent
@@ -291,17 +292,26 @@ class DslCommandExecutor private constructor(
         override suspend fun onEvent(event: GenericEvent) {
             when (event) {
                 is SlashCommandInteractionEvent -> {
-                    if (getSlashCommand(event) != null) {
+                    val slashCommand = getSlashCommand(event)
+                    if (slashCommand != null) {
                         scope.launch {
-                            execute(event, this)
+                            log.trace("Running command ${slashCommand.name} with a timeout of ${slashCommand.timeout}")
+                            withTimeout(slashCommand.timeout) {
+                                execute(event, this)
+                            }
+
                         }
                     }
                 }
 
                 is CommandAutoCompleteInteractionEvent -> {
-                    if (getSlashCommand(event) != null) {
+                    val slashCommand = getSlashCommand(event)
+                    if (slashCommand != null) {
                         scope.launch {
-                            handleAutocomplete(event)
+                            log.trace("Running autocomplete handler ${slashCommand.name} with a timeout of ${slashCommand.timeout}")
+                            withTimeout(slashCommand.autocompleteTimeout) {
+                                handleAutocomplete(event)
+                            }
                         }
                     }
                 }
@@ -309,14 +319,22 @@ class DslCommandExecutor private constructor(
                 is UserContextInteractionEvent -> {
                     scope.launch {
                         userContextCommands.firstOrNull { it.name == event.name }
-                            ?.execute(UserContext(event))
+                            ?.apply {
+                                withTimeout(timeout) {
+                                    execute(UserContext(event, scope))
+                                }
+                            }
                     }
                 }
 
                 is MessageContextInteractionEvent -> {
                     scope.launch {
                         messageContextCommands.firstOrNull { it.name == event.name }
-                            ?.execute(MessageContext(event))
+                            ?.apply {
+                                withTimeout(timeout) {
+                                    execute(MessageContext(event, scope))
+                                }
+                            }
                     }
                 }
             }
