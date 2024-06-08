@@ -58,8 +58,13 @@ open class ContextCommand<Event : ContextInteraction<*>>(
         try {
             commandAction(event)
         } catch (e: Exception) {
-            event.reply(":no_entry: ${e.message ?: "An unknown error occurred!"}")
-                .setEphemeral(true).queue()
+            val msg = ":no_entry: ${e.message ?: "An unknown error occurred!"}"
+            if (event.isAcknowledged) {
+                event.hook.editOriginal(msg).setEmbeds().setComponents().queue()
+            } else {
+                event.reply(msg)
+                    .setEphemeral(true).queue()
+            }
         }
     }
 
