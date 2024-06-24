@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit
 open class ModalManagerConfiguration(
     private val shardManager: ShardManager,
     @Value("\${bot.modal.gcPeriod:1}") private val time: Long,
-    @Value("\${bot.modal.gcUnit:SECOND}") private val unit: TimeUnit,
+    @Value("\${bot.modal.gcUnit:SECONDS}") private val unit: TimeUnit,
 ) {
 
     private val log by SLF4J
