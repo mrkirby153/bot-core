@@ -296,10 +296,12 @@ class DslCommandExecutor private constructor(
                     if (slashCommand != null) {
                         scope.launch {
                             log.trace("Running command ${slashCommand.name} with a timeout of ${slashCommand.timeout}")
-                            withTimeout(slashCommand.timeout) {
+                            if (slashCommand.timeout != 0L)
+                                withTimeout(slashCommand.timeout) {
+                                    execute(event, this)
+                                }
+                            else
                                 execute(event, this)
-                            }
-
                         }
                     }
                 }
@@ -320,9 +322,12 @@ class DslCommandExecutor private constructor(
                     scope.launch {
                         userContextCommands.firstOrNull { it.name == event.name }
                             ?.apply {
-                                withTimeout(timeout) {
+                                if (timeout != 0L)
+                                    withTimeout(timeout) {
+                                        execute(UserContext(event, scope))
+                                    }
+                                else
                                     execute(UserContext(event, scope))
-                                }
                             }
                     }
                 }
@@ -331,9 +336,12 @@ class DslCommandExecutor private constructor(
                     scope.launch {
                         messageContextCommands.firstOrNull { it.name == event.name }
                             ?.apply {
-                                withTimeout(timeout) {
+                                if (timeout != 0L)
+                                    withTimeout(timeout) {
+                                        execute(MessageContext(event, scope))
+                                    }
+                                else
                                     execute(MessageContext(event, scope))
-                                }
                             }
                     }
                 }
