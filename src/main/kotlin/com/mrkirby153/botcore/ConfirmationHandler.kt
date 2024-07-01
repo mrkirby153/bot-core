@@ -5,6 +5,7 @@ import com.mrkirby153.botcore.builder.MessageBuilder
 import com.mrkirby153.botcore.command.slashcommand.dsl.SlashContext
 import com.mrkirby153.botcore.coroutine.await
 import com.mrkirby153.botcore.utils.SLF4J
+import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
 import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent
@@ -31,11 +32,11 @@ object ConfirmationHandler : ListenerAdapter() {
         try {
             if (id == interaction.yes) {
                 log.debug("$interactionId confirmed")
-                event.deferReply().queue()
+                event.deferReply(interaction.ephemeral).queue()
                 interaction.callback.onSuccess(event.hook)
             } else if (id == interaction.no) {
                 log.debug("$interactionId rejected")
-                event.deferReply().queue()
+                event.deferReply(interaction.ephemeral).queue()
                 interaction.callback.onFail(event.hook)
             }
         } finally {
@@ -48,11 +49,13 @@ object ConfirmationHandler : ListenerAdapter() {
         callback: Callback,
         yes: String,
         no: String,
-        allowedUsers: List<User>
+        allowedUsers: List<User>,
+        ephemeral: Boolean
     ): Long {
         val id = nextId.getAndIncrement()
         log.debug("Enqueueing a callback with Y:$yes, N:$no as ID $id")
-        interactions[id] = QueuedConfirmation(callback, yes, no, allowedUsers.map { it.idLong })
+        interactions[id] =
+            QueuedConfirmation(callback, yes, no, allowedUsers.map { it.idLong }, ephemeral)
         componentsToInteractions[yes] = id
         componentsToInteractions[no] = id
         return id
@@ -66,6 +69,19 @@ object ConfirmationHandler : ListenerAdapter() {
             componentsToInteractions.remove(queued.no)
         }
     }
+}
+
+private class ConfirmationCallback(
+    private val continuation: CancellableContinuation<Pair<InteractionHook, Boolean>>
+) : Callback {
+    override fun onSuccess(hook: InteractionHook) {
+        continuation.resume(Pair(hook, true))
+    }
+
+    override fun onFail(hook: InteractionHook) {
+        continuation.resume(Pair(hook, false))
+    }
+
 }
 
 /**
@@ -90,16 +106,13 @@ suspend fun SlashContext.confirm(
     }
     reply(message.create()).setEphemeral(ephemeral).await()
     return suspendCancellableCoroutine { continuation ->
-        val callback = object : Callback {
-            override fun onSuccess(hook: InteractionHook) {
-                continuation.resume(Pair(hook, true))
-            }
-
-            override fun onFail(hook: InteractionHook) {
-                continuation.resume(Pair(hook, false))
-            }
-        }
-        val id = ConfirmationHandler.enqueue(callback, buttons.first, buttons.second, allowedUsers)
+        val id = ConfirmationHandler.enqueue(
+            ConfirmationCallback(continuation),
+            buttons.first,
+            buttons.second,
+            allowedUsers,
+            ephemeral
+        )
         continuation.invokeOnCancellation { ConfirmationHandler.dequeue(id) }
     }
 
@@ -112,10 +125,11 @@ suspend fun SlashContext.confirm(
  */
 suspend fun InteractionHook.confirm(
     allowedUser: User,
+    ephemeral: Boolean = false,
     yesButton: (ButtonBuilder.() -> Unit)? = null,
     noButton: (ButtonBuilder.() -> Unit)? = null,
     builder: MessageBuilder.() -> Unit
-) = confirm(listOf(allowedUser), yesButton, noButton, builder)
+) = confirm(listOf(allowedUser), ephemeral, yesButton, noButton, builder)
 
 /**
  * Confirms an interaction with two buttons, a "yes" button and a "no" button. Specify [yesButton] or
@@ -124,6 +138,7 @@ suspend fun InteractionHook.confirm(
  */
 suspend fun InteractionHook.confirm(
     allowedUsers: List<User>,
+    ephemeral: Boolean = false,
     yesButton: (ButtonBuilder.() -> Unit)? = null,
     noButton: (ButtonBuilder.() -> Unit)? = null,
     builder: MessageBuilder.() -> Unit
@@ -135,16 +150,13 @@ suspend fun InteractionHook.confirm(
     }
     editOriginal(message.edit()).await()
     return suspendCancellableCoroutine { continuation ->
-        val callback = object : Callback {
-            override fun onSuccess(hook: InteractionHook) {
-                continuation.resume(Pair(hook, false))
-            }
-
-            override fun onFail(hook: InteractionHook) {
-                continuation.resume(Pair(hook, false))
-            }
-        }
-        val id = ConfirmationHandler.enqueue(callback, buttons.first, buttons.second, allowedUsers)
+        val id = ConfirmationHandler.enqueue(
+            ConfirmationCallback(continuation),
+            buttons.first,
+            buttons.second,
+            allowedUsers,
+            ephemeral
+        )
         continuation.invokeOnCancellation { ConfirmationHandler.dequeue(id) }
     }
 }
@@ -188,5 +200,6 @@ private data class QueuedConfirmation(
     val callback: Callback,
     val yes: String,
     val no: String,
-    val allowedUsers: List<Long>
+    val allowedUsers: List<Long>,
+    val ephemeral: Boolean
 )

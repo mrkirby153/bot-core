@@ -111,7 +111,7 @@ class TestCommands(private val modalManager: ModalManager) : ProvidesSlashComman
             slashCommand("test-confirm") {
                 subCommand("normal") {
                     run {
-                        val (hook, confirmed) = confirm {
+                        val (hook, confirmed) = confirm(true) {
                             text {
                                 appendLine("Are you sure you want to continue?")
                             }
