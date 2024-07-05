@@ -9,6 +9,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import net.dv8tion.jda.api.JDA
@@ -228,6 +229,8 @@ class DslCommandExecutor private constructor(
                 }
             }
             replyOrEdit(msg)
+        } catch (e: TimeoutCancellationException) {
+            log.debug("Execution timed out. Ignoring...")
         } catch (e: Exception) {
             log.error("Error executing slash command ${event.fullCommandName}", e)
             replyOrEdit(":no_entry: Something went wrong when processing this command")

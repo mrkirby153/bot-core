@@ -1,6 +1,7 @@
 package com.mrkirby153.botcore.command.slashcommand.dsl
 
 import com.mrkirby153.botcore.utils.PrerequisiteCheck
+import kotlinx.coroutines.TimeoutCancellationException
 import net.dv8tion.jda.api.interactions.commands.context.ContextInteraction
 import java.util.concurrent.TimeUnit
 
@@ -57,6 +58,8 @@ open class ContextCommand<Event : ContextInteraction<*>>(
         }
         try {
             commandAction(event)
+        } catch (e: TimeoutCancellationException) {
+            // Ignore
         } catch (e: Exception) {
             val msg = ":no_entry: ${e.message ?: "An unknown error occurred!"}"
             if (event.isAcknowledged) {
