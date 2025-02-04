@@ -80,6 +80,6 @@ class ModalBuilder(
     }
 
     override fun build(): Modal {
-        return Modal.create(id, title).addActionRows(actionRows.map { it.build() }).build()
+        return Modal.create(id, title).addComponents(actionRows.map { it.build() }).build()
     }
 }

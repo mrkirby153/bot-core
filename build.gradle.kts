@@ -7,8 +7,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("java")
     id("maven-publish")
-    id("org.jetbrains.dokka") version "1.7.20"
-    kotlin("jvm") version "1.7.20"
+    id("org.jetbrains.dokka") version "2.0.0"
+    kotlin("jvm") version "2.0.0"
 }
 
 repositories {
@@ -23,10 +23,10 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.6.4")
     implementation("jakarta.persistence:jakarta.persistence-api:3.2.0")
     implementation("org.json:json:20220924")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.7.20")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:2.0.0")
     implementation("com.ibm.icu:icu4j:72.1")
 
-    compileOnly("net.dv8tion:JDA:5.0.0-beta.1")
+    compileOnly("net.dv8tion:JDA:5.3.0")
 
     compileOnly("org.springframework:spring-context:6.0.0")
     compileOnly("org.springframework.boot:spring-boot-autoconfigure:2.7.5")
