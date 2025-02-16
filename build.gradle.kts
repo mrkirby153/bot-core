@@ -1,6 +1,4 @@
-import org.jetbrains.dokka.Platform
 import org.jetbrains.dokka.gradle.DokkaTask
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 
@@ -9,6 +7,7 @@ plugins {
     id("maven-publish")
     id("org.jetbrains.dokka") version "2.0.0"
     kotlin("jvm") version "2.0.0"
+    kotlin("plugin.serialization") version "2.0.0"
 }
 
 repositories {
@@ -26,6 +25,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect:2.0.0")
     implementation("com.ibm.icu:icu4j:72.1")
 
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
     compileOnly("net.dv8tion:JDA:5.3.0")
 
     compileOnly("org.springframework:spring-context:6.0.0")

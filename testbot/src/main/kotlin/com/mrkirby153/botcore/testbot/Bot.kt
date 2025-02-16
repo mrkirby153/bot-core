@@ -6,6 +6,7 @@ import com.mrkirby153.botcore.coroutine.enableCoroutines
 import com.mrkirby153.botcore.modal.ModalManager
 import com.mrkirby153.botcore.testbot.command.TestCommands
 import com.mrkirby153.botcore.utils.SLF4J
+import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder
 
 
@@ -15,10 +16,13 @@ fun main() {
     val token = System.getenv("TOKEN")?.trim()
     requireNotNull(token) { "Token must be provided" }
     val shardManager = DefaultShardManagerBuilder.createDefault(token).enableCoroutines().build()
-
     // Wait for ready
     shardManager.shards.forEach { it.awaitReady() }
     log.info("All shards ready!")
+
+    runBlocking {
+        Emojis.register(shardManager)
+    }
 
     val dslCommandExecutor = DslCommandExecutor()
     shardManager.addEventListener(dslCommandExecutor.getListener())

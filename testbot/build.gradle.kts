@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("java")
     kotlin("jvm")
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 repositories {
@@ -26,6 +27,13 @@ tasks.withType<KotlinCompile> {
         freeCompilerArgs.set(listOf("-Xcontext-receivers"))
     }
 }
+
+tasks.withType<Jar> {
+    manifest {
+        attributes["Main-Class"] = "com.mrkirby153.botcore.testbot.BotKt"
+    }
+}
+
 kotlin {
     jvmToolchain(17)
 }

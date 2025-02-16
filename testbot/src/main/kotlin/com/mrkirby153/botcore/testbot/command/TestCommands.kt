@@ -13,6 +13,7 @@ import com.mrkirby153.botcore.confirm
 import com.mrkirby153.botcore.coroutine.await
 import com.mrkirby153.botcore.modal.ModalManager
 import com.mrkirby153.botcore.modal.await
+import com.mrkirby153.botcore.testbot.Emojis
 import com.mrkirby153.botcore.testbot.wrappedString
 import com.mrkirby153.botcore.utils.SLF4J
 import kotlinx.coroutines.delay
@@ -139,6 +140,12 @@ class TestCommands(private val modalManager: ModalManager) : ProvidesSlashComman
                             }
                         }
                     }
+                }
+            }
+
+            slashCommand("emoji-test") {
+                run {
+                    reply("${Emojis.greenTick} This is a test of the emoji system!").await()
                 }
             }
         }
