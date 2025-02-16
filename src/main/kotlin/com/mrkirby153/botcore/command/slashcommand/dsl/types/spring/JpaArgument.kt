@@ -89,8 +89,8 @@ class JpaObjectConverter<Obj, Id, Repo : JpaRepository<Obj, Id>>(
  *
  * The default autocomplete handler returns values mapped by [autocompleteName]
  */
-context(AbstractSlashCommand)
 inline fun <reified T : Any, reified Id> JpaRepository<T, Id>.argument(
+    slashCommand: AbstractSlashCommand,
     name: String? = null,
     enableAutocomplete: Boolean = false,
     crossinline autocompleteName: (T) -> String = { it.toString() },
@@ -98,7 +98,7 @@ inline fun <reified T : Any, reified Id> JpaRepository<T, Id>.argument(
 ): ArgumentBuilder<T, ThreadSafeJpaArgument<T, Id, JpaRepository<T, Id>>> {
     val className = T::class.java.name
     return ArgumentBuilder<T, ThreadSafeJpaArgument<T, Id, JpaRepository<T, Id>>>(
-        this@AbstractSlashCommand, JpaObjectConverter(this, {
+        slashCommand, JpaObjectConverter(this, {
             when (Id::class.java) {
                 Long::class.java, java.lang.Long::class.java -> it.asLong
                 Int::class.java, java.lang.Integer::class.java -> it.asInt
@@ -129,3 +129,12 @@ inline fun <reified T : Any, reified Id> JpaRepository<T, Id>.argument(
         }
     }
 }
+
+context(AbstractSlashCommand)
+@Deprecated("Use the overload that takes the slash command as the first argument")
+inline fun <reified T : Any, reified Id> JpaRepository<T, Id>.argument(
+    name: String? = null,
+    enableAutocomplete: Boolean = false,
+    crossinline autocompleteName: (T) -> String = { it.toString() },
+    builder: ArgumentBuilder<T, ThreadSafeJpaArgument<T, Id, JpaRepository<T, Id>>>.() -> Unit = {}
+) = this.argument(this@AbstractSlashCommand, name, enableAutocomplete, autocompleteName, builder)
