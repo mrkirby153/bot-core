@@ -22,7 +22,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.6.4")
 //    implementation("net.dv8tion:JDA:5.3.0")
 
-    compileOnly("io.github.freya022:JDA:c6f764778d")
+    implementation("io.github.freya022:JDA:c6f764778d")
     implementation("ch.qos.logback:logback-classic:1.4.6")
 }
 tasks.withType<KotlinCompile> {

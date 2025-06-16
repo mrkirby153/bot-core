@@ -79,11 +79,15 @@ class ContainerBuilder(id: Int?) : BaseComponentBuilder<Container>(id) {
         components.add(TextComponentBuilder(id).apply(builder).buildWithId())
     }
 
-    fun mediaGallery(id: Int? = null) {
-        components.add(MediaGalleryBuilder(id).buildWithId())
+    fun text(text: String, id: Int? = null) {
+        components.add(TextComponentBuilder(id).apply { this.text(text) }.buildWithId())
     }
 
-    fun separator(id: Int? = null, builder: SeparatorBuilder.() -> Unit) {
+    fun mediaGallery(id: Int? = null, builder: MediaGalleryBuilder.() -> Unit) {
+        components.add(MediaGalleryBuilder(id).apply(builder).buildWithId())
+    }
+
+    fun separator(id: Int? = null, builder: SeparatorBuilder.() -> Unit = {}) {
         components.add(SeparatorBuilder(id).apply(builder).buildWithId())
     }
 
@@ -117,7 +121,7 @@ class ActionRowBuilder(id: Int?, private val isModal: Boolean) :
         customId: String = randomCustomId(),
         label: String,
         id: Int? = null,
-        builder: TextInputBuilder.() -> Unit
+        builder: TextInputBuilder.() -> Unit = {}
     ): String {
         check(isModal) { "Text input can only be added to a modal ActionRow" }
         check(select == null) { "ActionRow cannot contain both text input and a select menu" }
@@ -196,7 +200,7 @@ class ActionRowBuilder(id: Int?, private val isModal: Boolean) :
 
     override fun build(): ActionRow {
         if (components.isEmpty()) {
-            check(select != null) { "ActionRow must contain at least one component or select menu" }
+            check(select != null || textInput != null) { "ActionRow must contain at least one component or select menu" }
         }
 
         return ActionRow.of(

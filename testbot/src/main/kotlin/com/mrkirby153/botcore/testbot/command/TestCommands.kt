@@ -1,5 +1,6 @@
 package com.mrkirby153.botcore.testbot.command
 
+import com.mrkirby153.botcore.builder.componentsv2.container
 import com.mrkirby153.botcore.builder.message
 import com.mrkirby153.botcore.command.slashcommand.dsl.CommandException
 import com.mrkirby153.botcore.command.slashcommand.dsl.DslCommandExecutor
@@ -147,6 +148,28 @@ class TestCommands(private val modalManager: ModalManager) : ProvidesSlashComman
             slashCommand("emoji-test") {
                 run {
                     reply("${Emojis.greenTick} This is a test of the emoji system!").await()
+                }
+            }
+
+            slashCommand("v2-test") {
+                run {
+                    replyComponents(container {
+                        text("Hello, this is a test of the new components system!")
+                        separator()
+                        actionRow {
+                            button {
+                                label("This is a button")
+                            }
+                        }
+                        separator()
+                        text("Select a channel below:")
+                        actionRow {
+                            channelSelect {
+                                placeholder("Select a channel")
+                                minValues(1)
+                            }
+                        }
+                    }).useComponentsV2().await()
                 }
             }
         }
