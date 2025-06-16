@@ -26,8 +26,9 @@ dependencies {
     implementation("com.ibm.icu:icu4j:72.1")
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
-    compileOnly("net.dv8tion:JDA:5.3.0")
-
+//    compileOnly("net.dv8tion:JDA:5.3.0")
+    // PR build with ComponentsV2 support
+    compileOnly("io.github.freya022:JDA:c6f764778d")
     compileOnly("org.springframework:spring-context:6.0.0")
     compileOnly("org.springframework.boot:spring-boot-autoconfigure:2.7.5")
     compileOnly("org.springframework.data:spring-data-jpa:2.7.5")
@@ -43,6 +44,10 @@ java {
 
 kotlin {
     jvmToolchain(17)
+    compilerOptions {
+        freeCompilerArgs.add("-Xcontext-receivers")
+        javaParameters.set(true)
+    }
 }
 
 
@@ -77,12 +82,5 @@ tasks {
     }
     withType<Jar> {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    }
-    withType<KotlinCompile> {
-        kotlinOptions {
-            javaParameters = true
-            // Experimental context receiver support
-            freeCompilerArgs += "-Xcontext-receivers"
-        }
     }
 }

@@ -1,5 +1,6 @@
 package com.mrkirby153.botcore.builder
 
+import com.mrkirby153.botcore.builder.componentsv2.ActionRowBuilder
 import net.dv8tion.jda.api.entities.IMentionable
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.Message.MentionType
@@ -125,8 +126,8 @@ class MessageBuilder {
     /**
      * Adds an action row to the message
      */
-    inline fun actionRow(builder: ActionRowBuilder.() -> Unit) {
-        actionRows.add(ActionRowBuilder().apply(builder))
+    inline fun actionRow(id: Int? = null, builder: ActionRowBuilder.() -> Unit) {
+        actionRows.add(ActionRowBuilder(id, false).apply(builder))
     }
 }
 

@@ -8,7 +8,6 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
-import net.dv8tion.jda.api.interactions.callbacks.IModalCallback
 import net.dv8tion.jda.api.interactions.modals.Modal
 import net.dv8tion.jda.api.sharding.ShardManager
 import okhttp3.internal.toImmutableMap
@@ -74,7 +73,7 @@ class ModalManager(
 
         val callback = object : ModalCallback {
             override fun onCompleted(event: ModalInteractionEvent) {
-                modal.onSubmit(event)
+                modal(event)
             }
 
             override fun onTimeout() {

@@ -9,6 +9,7 @@ plugins {
 repositories {
     mavenCentral()
     maven(url = "https://m2.dv8tion.net/releases")
+    maven(url = "https://jitpack.io")
 }
 
 
@@ -19,7 +20,9 @@ dependencies {
     implementation(project(":"))
         implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.6.4")
-    implementation("net.dv8tion:JDA:5.3.0")
+//    implementation("net.dv8tion:JDA:5.3.0")
+
+    compileOnly("io.github.freya022:JDA:c6f764778d")
     implementation("ch.qos.logback:logback-classic:1.4.6")
 }
 tasks.withType<KotlinCompile> {

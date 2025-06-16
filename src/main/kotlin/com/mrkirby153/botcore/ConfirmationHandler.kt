@@ -1,17 +1,17 @@
 package com.mrkirby153.botcore
 
-import com.mrkirby153.botcore.builder.ButtonBuilder
 import com.mrkirby153.botcore.builder.MessageBuilder
+import com.mrkirby153.botcore.builder.componentsv2.ButtonBuilder
 import com.mrkirby153.botcore.command.slashcommand.dsl.SlashContext
 import com.mrkirby153.botcore.coroutine.await
 import com.mrkirby153.botcore.utils.SLF4J
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
+import net.dv8tion.jda.api.components.buttons.ButtonStyle
 import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.interactions.InteractionHook
-import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.resume
 
@@ -173,16 +173,16 @@ private fun MessageBuilder.buildRow(
             if (yesButton != null) {
                 yesButton.invoke(this)
             } else {
-                text = "Yes"
-                style = ButtonStyle.SUCCESS
+                label("Yes")
+                style(ButtonStyle.SUCCESS)
             }
         }
         noId = button {
             if (noButton != null) {
                 noButton.invoke(this)
             } else {
-                text = "No"
-                style = ButtonStyle.DANGER
+                label("No")
+                style(ButtonStyle.DANGER)
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.mrkirby153.botcore.builder
 
+import com.mrkirby153.botcore.builder.componentsv2.ActionRowBuilder
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent
 import net.dv8tion.jda.api.interactions.modals.Modal
 import java.util.UUID
@@ -35,32 +36,20 @@ class ModalBuilder(
     /**
      * The action ran when the modal is submitted
      */
-    var onSubmit: ((ModalInteractionEvent) -> Unit) = { _ -> }
+    private var onSubmit: ((ModalInteractionEvent) -> Unit) = { _ -> }
 
     /**
      * The modal's action rows
      */
-    val actionRows = mutableListOf<ActionRowBuilder>()
+    private val actionRows = mutableListOf<ActionRowBuilder>()
 
     /**
-     * Adds a text input with the given [id] to the modal
+     * Adds an ActionRow to this modal
      */
-    inline fun textInput(id: String? = null, builder: TextInputBuilder.() -> Unit) {
-        actionRows.add(ActionRowBuilder(Type.MODAL).apply {
-            this.textInput(id, builder)
-        })
-    }
-
-    /**
-     * Adds a text input with the given [id] to the modal
-     *
-     * _This method exists for Java compatibility_
-     */
-    @JvmOverloads
-    fun textInput(id: String? = null, builder: Consumer<TextInputBuilder>) {
-        textInput(id) {
-            builder.accept(this)
-        }
+    fun actionRow(id: Int? = null, builder: ActionRowBuilder.() -> Unit) {
+        val row = ActionRowBuilder(id, true)
+        row.apply(builder)
+        actionRows.add(row)
     }
 
     /**
@@ -81,5 +70,9 @@ class ModalBuilder(
 
     override fun build(): Modal {
         return Modal.create(id, title).addComponents(actionRows.map { it.build() }).build()
+    }
+
+    operator fun invoke(event: ModalInteractionEvent) {
+        this.onSubmit(event)
     }
 }

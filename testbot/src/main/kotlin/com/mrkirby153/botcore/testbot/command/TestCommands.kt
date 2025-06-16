@@ -18,7 +18,7 @@ import com.mrkirby153.botcore.testbot.wrappedString
 import com.mrkirby153.botcore.utils.SLF4J
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import net.dv8tion.jda.api.interactions.components.text.TextInputStyle
+import net.dv8tion.jda.api.components.textinput.TextInputStyle
 
 class TestCommands(private val modalManager: ModalManager) : ProvidesSlashCommands {
     private val log by SLF4J
@@ -88,12 +88,13 @@ class TestCommands(private val modalManager: ModalManager) : ProvidesSlashComman
                 run {
                     val result = modalManager.await {
                         title = "This is a title"
-                        textInput {
-                            name = "Test One"
+                        actionRow {
+                            text(label = "Test One") {}
                         }
-                        textInput {
-                            name = "Test Two"
-                            style = TextInputStyle.PARAGRAPH
+                        actionRow {
+                            text(label = "Test Two") {
+                                style(TextInputStyle.PARAGRAPH)
+                            }
                         }
                     }
                     result.reply(message {
