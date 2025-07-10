@@ -1,9 +1,11 @@
 package com.mrkirby153.botcore.builder
 
 import com.mrkirby153.botcore.builder.componentsv2.ActionRowBuilder
+import net.dv8tion.jda.api.components.MessageTopLevelComponent
 import net.dv8tion.jda.api.entities.IMentionable
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.Message.MentionType
+import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.entities.Role
 import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.entities.channel.Channel
@@ -45,34 +47,35 @@ class MessageBuilder {
     /**
      * The embeds in this message
      */
-    val embeds = mutableListOf<EmbedBuilder>()
+    val embeds = mutableListOf<MessageEmbed>()
 
-    /**
-     * The message's action rows
-     */
-    val actionRows = mutableListOf<ActionRowBuilder>()
+    val components = mutableListOf<MessageTopLevelComponent>()
 
     private val mentions = mutableListOf<IMentionable>()
     private val allowMentions = mutableSetOf<MentionType>()
 
+    private var componentsV2 = false
+
     fun create(): MessageCreateData {
         val jdaMessageBuilder = MessageCreateBuilder()
         jdaMessageBuilder.setContent(content)
-        jdaMessageBuilder.setComponents(actionRows.map { it.build() })
-        jdaMessageBuilder.setEmbeds(embeds.map { it.build() })
+        jdaMessageBuilder.setComponents(components)
+        jdaMessageBuilder.setEmbeds(embeds)
         jdaMessageBuilder.setAllowedMentions(allowMentions)
         jdaMessageBuilder.mention(mentions)
         jdaMessageBuilder.setTTS(tts)
+        jdaMessageBuilder.useComponentsV2(componentsV2)
         return jdaMessageBuilder.build()
     }
 
     fun edit(): MessageEditData {
         val jdaMessageBuilder = MessageEditBuilder()
         jdaMessageBuilder.setContent(content)
-        jdaMessageBuilder.setComponents(actionRows.map { it.build() })
-        jdaMessageBuilder.setEmbeds(embeds.map { it.build() })
+        jdaMessageBuilder.setComponents(components)
+        jdaMessageBuilder.setEmbeds(embeds)
         jdaMessageBuilder.setAllowedMentions(allowMentions)
         jdaMessageBuilder.mention(mentions)
+        jdaMessageBuilder.useComponentsV2(componentsV2)
         return jdaMessageBuilder.build()
     }
 
@@ -120,14 +123,25 @@ class MessageBuilder {
      * Adds an embed to the message
      */
     inline fun embed(builder: EmbedBuilder.() -> Unit) {
-        embeds.add(EmbedBuilder().apply(builder))
+        embeds.add(EmbedBuilder().apply(builder).build())
     }
 
     /**
      * Adds an action row to the message
      */
     inline fun actionRow(id: Int? = null, builder: ActionRowBuilder.() -> Unit) {
-        actionRows.add(ActionRowBuilder(id, false).apply(builder))
+        components.add(ActionRowBuilder(id, false).apply(builder).build())
+    }
+
+    /**
+     * Adds a component to the message
+     */
+    fun component(component: MessageTopLevelComponent) {
+        components.add(component)
+    }
+
+    fun componentsV2() {
+        componentsV2 = true
     }
 }
 

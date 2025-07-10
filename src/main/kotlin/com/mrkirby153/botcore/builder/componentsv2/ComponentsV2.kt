@@ -28,6 +28,7 @@ import net.dv8tion.jda.api.entities.UserSnowflake
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel
 import net.dv8tion.jda.api.entities.emoji.Emoji
 import net.dv8tion.jda.api.utils.FileUpload
+import java.awt.Color
 import java.util.UUID
 
 @DslMarker
@@ -64,6 +65,18 @@ class ContainerBuilder(id: Int?) : BaseComponentBuilder<Container>(id) {
 
     private val components = mutableListOf<ContainerChildComponent>()
 
+    private var spoiler = false
+    private var accentColor: Color? = null
+
+
+    fun spoiler(spoiler: Boolean = true) {
+        this.spoiler = spoiler
+    }
+
+    fun accentColor(color: Color) {
+        this.accentColor = color
+    }
+
     /**
      * Adds a new [Section] to this container
      */
@@ -80,7 +93,7 @@ class ContainerBuilder(id: Int?) : BaseComponentBuilder<Container>(id) {
     }
 
     fun text(text: String, id: Int? = null) {
-        components.add(TextComponentBuilder(id).apply { this.text(text) }.buildWithId())
+        components.add(TextComponentBuilder(id).apply { this@apply.text(text) }.buildWithId())
     }
 
     fun mediaGallery(id: Int? = null, builder: MediaGalleryBuilder.() -> Unit) {
@@ -95,7 +108,8 @@ class ContainerBuilder(id: Int?) : BaseComponentBuilder<Container>(id) {
         components.add(FileBuilder(id).apply(builder).buildWithId())
     }
 
-    override fun build() = Container.of(components)
+    override fun build() =
+        Container.of(components).withSpoiler(spoiler).withAccentColor(accentColor)
 }
 
 @ComponentsV2Dsl
